@@ -1,2 +1,1 @@
-# Product-Analysis-Online-Retail
-This project is to analyze the causes of return and cancellation in order to improve net revenue.
+## Reducing Returns to Improve Net Revenue: Returns/Cancellations Diagnostics & Action Plan (E-commerce)

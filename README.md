@@ -5,7 +5,7 @@
 - Increase net revenue (gross revenue − return/cancellation impact)
 
 ## Source Dataset
-Online Retail II--This dataset originates from UCI Machine Learning Respository that includes online retail transactions from 2009-2011.
+**[Online Retail II](https://archive.ics.uci.edu/dataset/502/online%2Bretail%2Bii?utm_source=chatgpt.com)**--This dataset originating from UCI Machine Learning Respository includes online retail transactions from 2009-2011.
 
 ## Metrics
 - Return/Cancellation--The 'invoice' number beginning with upper letter 'C' or lower one 'c' refers to cancellation/return.

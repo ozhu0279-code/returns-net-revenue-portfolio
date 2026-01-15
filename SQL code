@@ -1,4 +1,4 @@
-## cancellation rate
+## Cancellation rate
 WITH base AS (
   SELECT
     invoice_no,

@@ -1,4 +1,4 @@
-## Cancellation rate
+- #Cancellation rate
 WITH base AS (
   SELECT
     invoice_no,
@@ -32,3 +32,44 @@ SELECT
 FROM base
 GROUP BY month
 ORDER BY month;
+
+- ##Cancellation Revenue Share 
+WITH all_txn AS (
+  SELECT stock_code, unit_price, quantity, invoice_no FROM online_retail_2009_2010
+  UNION ALL
+  SELECT stock_code, unit_price, quantity, invoice_no FROM online_retail_2010_2011
+)
+SELECT
+  SUM(CASE WHEN LOWER(invoice_no) LIKE 'c%' THEN ABS(unit_price * quantity) ELSE 0 END)
+  / NULLIF(SUM(CASE WHEN unit_price * quantity > 0 THEN unit_price * quantity ELSE 0 END), 0)
+  AS canceled_amount_share
+FROM all_txn;
+
+
+-## Top20 skus by cancelled revenue share
+WITH all_txn AS (
+  SELECT stock_code, unit_price, quantity, invoice_no
+  FROM online_retail_2009_2010
+  UNION ALL
+  SELECT stock_code, unit_price, quantity, invoice_no
+  FROM online_retail_2010_2011
+),
+sku AS (
+  SELECT
+    stock_code,
+    SUM(unit_price * quantity) AS net_revenue, 
+    SUM(CASE WHEN LOWER(invoice_no) LIKE 'c%' THEN unit_price * quantity ELSE 0 END) AS canceled_revenue_net,
+    SUM(CASE WHEN LOWER(invoice_no) LIKE 'c%' THEN ABS(unit_price * quantity) ELSE 0 END) AS canceled_amount_abs,
+    SUM(CASE WHEN unit_price * quantity > 0 THEN unit_price * quantity ELSE 0 END) AS sales_revenue
+  FROM all_txn
+  GROUP BY stock_code
+)
+SELECT
+  stock_code,
+  net_revenue,
+  canceled_revenue_net,     
+  canceled_amount_abs,       
+  canceled_amount_abs / NULLIF(sales_revenue, 0) AS canceled_share 
+FROM sku
+ORDER BY canceled_revenue_net ASC
+LIMIT 20;

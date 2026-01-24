@@ -8,7 +8,7 @@ Cleaning Data in SQLTool
 -- Retrieve the database
 SELECT *
 FROM  online_retail_2009_2010
-	UNION ALL
+  UNION ALL
 SELECT *
 FROM  online_retail_2010_2011
 
@@ -28,12 +28,14 @@ FROM CTE
 WHERE RowNum > 1
 ORDER BY RowNum DESC;
 -- Result: 537594 duplicate rows, the maximum numbers of repetition is 20, and the minimum is 2.
+※ Duplicates may not the dirty date,because one invoice may include more than 1 same stockcodes,so we just combined them into a new table
 
--- [1].1 Removing duplicate rows and merging into a new table
-CREATE TABLE cleaned_online_retail AS
+
+-- [1].1 Merging into a new table
+CREATE TABLE combined_online_retail AS
 SELECT invoice_no, stock_code, description, quantity, invoice_date, unit_price, customer_id, country
 FROM online_retail_2009_2010
-UNION
+UNION ALL
 SELECT invoice_no, stock_code, description, quantity, invoice_date, unit_price, customer_id, country
 FROM online_retail_2010_2011;
 

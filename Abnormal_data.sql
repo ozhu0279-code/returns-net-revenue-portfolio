@@ -9,7 +9,9 @@ invoice_date--2010/2/1 08:24
 
 */
 
-/* There's difference of cancelld invoiced counting by different condtions.
+/* 
+[a] There's difference of cancelld invoiced counting by different condtions.
+*/
 
 SELECT *
 FROM combined_online_retail
@@ -21,10 +23,12 @@ FROM combined_online_retail
 WHERE quantity < 0 AND invoice_no LIKE 'C%';
 ----Result:19,493 rows
 
-/* 
-Conclusion
 
----I think the problem is 'quantity' column,so i counted the quantity of rows under 3 different conditions where quantity is greater than or less than or equals to 0.
+/* 
+[b] Hypothesis:problem may be 'quantity' column.
+Validation:counting the quantity of rows under 3 different conditions where quantity is greater than or less than or equals to 0.
+*/
+
 SELECT
   SUM(CASE WHEN quantity < 0 THEN 1 ELSE 0 END) AS c_rows_qty_negative,
   SUM(CASE WHEN quantity = 0 THEN 1 ELSE 0 END) AS c_rows_qty_zero,
@@ -37,9 +41,14 @@ c_rows_qty_negative:19,493 rows
 c_rows_qty_zero:0 row
 c_rows_qty_positive:1 rows
 
+/* 
 Conclusion:This result demonstrates there's an order that status shows canceled but quantity is positive.That's contradictory.
+*/
 
----I explored the specific issue row.
+/* 
+[c] Exploring the specific issue row.
+*/
+  
 SELECT
   invoice_no,
   stock_code,
@@ -55,7 +64,10 @@ WHERE invoice_no LIKE 'C%'
   AND quantity > 1;
 ---Result:No data.
 
----I changed the condtion to count the issue row again.
+/* 
+[d] Changing the condtion to count the issue row again.
+*/
+
 SELECT
   COUNT(*) AS c_rows_total,
   SUM(quantity > 1) AS c_rows_qty_gt_1,
@@ -63,12 +75,15 @@ SELECT
   SUM(quantity < 0) AS c_rows_qty_lt_0
 FROM combined_online_retail
 WHERE invoice_no LIKE 'C%';
----Result:
-c_rows_qty_gt_1:0 row
-c_rows_qty_eq_1:1 row
+
+---Result:c_rows_qty_gt_1:0 row 
+c_rows_qty_eq_1:1 row 
 c_rows_qty_lt_0:19,493 rows
 
----I kept exploring the specific issue row.
+/* 
+[e] Keeping exploring the specific issue row.
+/* 
+
 SELECT
   invoice_no,
   stock_code,
@@ -81,6 +96,8 @@ SELECT
   country
 FROM combined_online_retail
 WHERE invoice_no LIKE 'C%'
-  AND quantity = 1;
+AND quantity = 1;
 
----Finally,issue row came out.
+/* 
+[g]Finally,issue row came out.
+/* 

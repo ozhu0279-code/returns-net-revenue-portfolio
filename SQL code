@@ -1,75 +1,76 @@
 - #Cancellation rate
-WITH base AS (
-  SELECT
-    invoice_no,
-    customer_id,
-    country,
-    DATE(invoice_date) AS order_date,
-    unit_price * quantity AS line_revenue,
-    CASE 
-      WHEN LOWER(invoice_no) LIKE 'c%' THEN 1 
-      ELSE 0 
-    END AS is_canceled
-  FROM online_retail_2009_2010
-  UNION ALL
-  SELECT
-    invoice_no,
-    customer_id,
-    country,
-    DATE(invoice_date) AS order_date,
-    unit_price * quantity AS line_revenue,
-    CASE 
-      WHEN LOWER(invoice_no) LIKE 'c%' THEN 1 
-      ELSE 0 
-    END AS is_canceled
-  FROM online_retail_2010_2011
-)
-SELECT
-  DATE_FORMAT(order_date, '%Y-%m') AS month,
-  COUNT(DISTINCT invoice_no) AS orders,
-  COUNT(DISTINCT CASE WHEN is_canceled=1 THEN invoice_no END) AS canceled_orders,
-  COUNT(DISTINCT CASE WHEN is_canceled = 1 THEN invoice_no END) / NULLIF(COUNT(DISTINCT invoice_no), 0) AS cancellation_rate
-FROM base
+SELECT 
+  DATE_FORMAT(invoice_date, '%Y-%m') AS month,
+  COUNT(DISTINCT invoice_no) AS total_orders,
+  COUNT(DISTINCT CASE WHEN quantity < 0 AND invoice_no LIKE 'C%' THEN invoice_no END) AS cancelled_orders,
+  COUNT(DISTINCT CASE WHEN quantity < 0 AND invoice_no LIKE 'C%' THEN invoice_no END)
+    / NULLIF (COUNT(DISTINCT invoice_no),0) AS cancellation_rate
+FROM combined_online_retail
 GROUP BY month
 ORDER BY month;
 
-- ##Cancellation Revenue Share 
-WITH all_txn AS (
-  SELECT stock_code, unit_price, quantity, invoice_no FROM online_retail_2009_2010
-  UNION ALL
-  SELECT stock_code, unit_price, quantity, invoice_no FROM online_retail_2010_2011
-)
-SELECT
-  SUM(CASE WHEN LOWER(invoice_no) LIKE 'c%' THEN ABS(unit_price * quantity) ELSE 0 END)
-  / NULLIF(SUM(CASE WHEN unit_price * quantity > 0 THEN unit_price * quantity ELSE 0 END), 0)
-  AS canceled_amount_share
-FROM all_txn;
+- ##Canceled Revenue Share 
+SELECT 
+   SUM(CASE 
+         WHEN invoice_no LIKE 'C%' AND unit_price * quantity < 0 THEN ABS(unit_price * quantity) 
+         ELSE 0 
+       END) AS canceled_revenue,
+   SUM(CASE 
+         WHEN unit_price * quantity > 0 THEN unit_price * quantity 
+         ELSE 0
+       END) AS total_revenue,
+   SUM(CASE 
+         WHEN invoice_no LIKE 'C%' AND unit_price * quantity < 0 THEN ABS(unit_price * quantity) 
+         ELSE 0 
+       END) / 
+NULLIF(SUM(CASE WHEN unit_price * quantity > 0 THEN unit_price * quantity ELSE 0 END), 0) AS canceled_revenue_share
+FROM combined_online_retail;
 
 
--## Top20 skus by cancelled revenue share
-WITH all_txn AS (
-  SELECT stock_code, unit_price, quantity, invoice_no
-  FROM online_retail_2009_2010
-  UNION ALL
-  SELECT stock_code, unit_price, quantity, invoice_no
-  FROM online_retail_2010_2011
-),
-sku AS (
+-## Top20 skus by canceled revenue share
+WITH SKU AS (
   SELECT
-    stock_code,
-    SUM(unit_price * quantity) AS net_revenue, 
-    SUM(CASE WHEN LOWER(invoice_no) LIKE 'c%' THEN unit_price * quantity ELSE 0 END) AS canceled_revenue_net,
-    SUM(CASE WHEN LOWER(invoice_no) LIKE 'c%' THEN ABS(unit_price * quantity) ELSE 0 END) AS canceled_amount_abs,
-    SUM(CASE WHEN unit_price * quantity > 0 THEN unit_price * quantity ELSE 0 END) AS sales_revenue
-  FROM all_txn
+     stock_code,
+         SUM (CASE
+            WHEN unit_price * quantity > 0 THEN unit_price * quantity
+            ELSE 0
+         END) AS gross_revenue,
+         SUM (CASE
+            WHEN invoice_no LIKE 'C%' AND unit_price * quantity < 0 THEN ABS(unit_price * quantity)
+            ELSE 0
+         END) AS canceled_revenue
+  FROM combined_online_retail
   GROUP BY stock_code
 )
 SELECT
-  stock_code,
-  net_revenue,
-  canceled_revenue_net,     
-  canceled_amount_abs,       
-  canceled_amount_abs / NULLIF(sales_revenue, 0) AS canceled_share 
-FROM sku
-ORDER BY canceled_revenue_net ASC
+    stock_code,
+    gross_revenue,
+    canceled_revenue,
+    canceled_revenue / NULLIF(gross_revenue, 0) AS canceled_revenue_share
+FROM SKU
+ORDER BY canceled_revenue_share DESC
+LIMIT 20;
+
+-## Top countries by canceled revenue share
+WITH ctr AS (
+  SELECT
+     country,
+         SUM (CASE
+            WHEN unit_price * quantity > 0 THEN unit_price * quantity
+            ELSE 0
+         END) AS gross_revenue,
+         SUM (CASE
+            WHEN invoice_no LIKE 'C%' AND unit_price * quantity < 0 THEN ABS(unit_price * quantity)
+            ELSE 0
+         END) AS canceled_revenue
+  FROM combined_online_retail
+  GROUP BY country
+)
+SELECT
+    country,
+    gross_revenue,
+    canceled_revenue,
+    canceled_revenue / NULLIF(gross_revenue, 0) AS canceled_revenue_share
+FROM ctr
+ORDER BY canceled_revenue_share DESC
 LIMIT 20;

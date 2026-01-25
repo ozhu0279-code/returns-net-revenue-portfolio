@@ -27,7 +27,7 @@ LIMIT 20;
 
 
 /*
-Top countries by canceled revenue share
+Top 20 countries by canceled revenue share
 */
 WITH ctr AS (
   SELECT

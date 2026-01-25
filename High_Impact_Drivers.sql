@@ -1,33 +1,6 @@
-- #Cancellation rate
-SELECT 
-  DATE_FORMAT(invoice_date, '%Y-%m') AS month,
-  COUNT(DISTINCT invoice_no) AS total_orders,
-  COUNT(DISTINCT CASE WHEN quantity < 0 AND invoice_no LIKE 'C%' THEN invoice_no END) AS cancelled_orders,
-  COUNT(DISTINCT CASE WHEN quantity < 0 AND invoice_no LIKE 'C%' THEN invoice_no END)
-    / NULLIF (COUNT(DISTINCT invoice_no),0) AS cancellation_rate
-FROM combined_online_retail
-GROUP BY month
-ORDER BY month;
-
-- ##Canceled Revenue Share 
-SELECT 
-   SUM(CASE 
-         WHEN invoice_no LIKE 'C%' AND unit_price * quantity < 0 THEN ABS(unit_price * quantity) 
-         ELSE 0 
-       END) AS canceled_revenue,
-   SUM(CASE 
-         WHEN unit_price * quantity > 0 THEN unit_price * quantity 
-         ELSE 0
-       END) AS total_revenue,
-   SUM(CASE 
-         WHEN invoice_no LIKE 'C%' AND unit_price * quantity < 0 THEN ABS(unit_price * quantity) 
-         ELSE 0 
-       END) / 
-NULLIF(SUM(CASE WHEN unit_price * quantity > 0 THEN unit_price * quantity ELSE 0 END), 0) AS canceled_revenue_share
-FROM combined_online_retail;
-
-
--## Top20 skus by canceled revenue share
+/*
+Top20 skus by canceled revenue share
+*/
 WITH SKU AS (
   SELECT
      stock_code,
@@ -51,7 +24,11 @@ FROM SKU
 ORDER BY canceled_revenue_share DESC
 LIMIT 20;
 
--## Top countries by canceled revenue share
+
+
+/*
+Top countries by canceled revenue share
+*/
 WITH ctr AS (
   SELECT
      country,

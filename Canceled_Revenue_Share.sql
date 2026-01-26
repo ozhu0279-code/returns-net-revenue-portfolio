@@ -15,4 +15,4 @@ SELECT
          ELSE 0 
        END) / 
 NULLIF(SUM(CASE WHEN unit_price * quantity > 0 THEN unit_price * quantity ELSE 0 END), 0) AS canceled_revenue_share
-FROM combined_online_retail;
+FROM cleaned_final;

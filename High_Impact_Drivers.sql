@@ -1,5 +1,5 @@
 /*
-Top20 skus by canceled revenue share
+Top20 skus by canceled revenue
 */
 WITH SKU AS (
   SELECT
@@ -18,16 +18,15 @@ WITH SKU AS (
 SELECT
     stock_code,
     gross_revenue,
-    canceled_revenue,
-    canceled_revenue / NULLIF(gross_revenue, 0) AS canceled_revenue_share
+    canceled_revenue
 FROM SKU
-ORDER BY canceled_revenue_share DESC
+ORDER BY canceled_revenue DESC
 LIMIT 20;
 
 
 
 /*
-Top 20 countries by canceled revenue share
+Top 20 countries by canceled revenue
 */
 WITH ctr AS (
   SELECT
@@ -46,8 +45,7 @@ WITH ctr AS (
 SELECT
     country,
     gross_revenue,
-    canceled_revenue,
-    canceled_revenue / NULLIF(gross_revenue, 0) AS canceled_revenue_share
+    canceled_revenue
 FROM ctr
-ORDER BY canceled_revenue_share DESC
+ORDER BY canceled_revenue DESC
 LIMIT 20;

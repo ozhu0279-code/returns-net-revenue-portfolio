@@ -12,7 +12,7 @@ WITH SKU AS (
             WHEN invoice_no LIKE 'C%' AND unit_price * quantity < 0 THEN ABS(unit_price * quantity)
             ELSE 0
          END) AS canceled_revenue
-  FROM combined_online_retail
+  FROM cleaned_final
   GROUP BY stock_code
 )
 SELECT
@@ -39,7 +39,7 @@ WITH ctr AS (
             WHEN invoice_no LIKE 'C%' AND unit_price * quantity < 0 THEN ABS(unit_price * quantity)
             ELSE 0
          END) AS canceled_revenue
-  FROM combined_online_retail
+  FROM cleaned_final
   GROUP BY country
 )
 SELECT

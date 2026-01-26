@@ -12,26 +12,7 @@ FROM  online_retail_2009_2010
 SELECT *
 FROM  online_retail_2010_2011
 
-
--- [1] Checking duplicate rows
-WITH CTE AS (
-    SELECT *,
-           ROW_NUMBER() OVER (PARTITION BY invoice_no, stock_code, description, quantity, invoice_date, unit_price, customer_id, country) AS RowNum
-    FROM online_retail_2009_2010
-    UNION ALL
-    SELECT *,
-           ROW_NUMBER() OVER (PARTITION BY invoice_no, stock_code, description, quantity, invoice_date, unit_price, customer_id, country) AS RowNum
-    FROM online_retail_2010_2011
-)
-SELECT *
-FROM CTE
-WHERE RowNum > 1
-ORDER BY RowNum DESC;
--- Result: 537594 duplicate rows, the maximum numbers of repetition is 20, and the minimum is 2.
-※ Duplicates may not the dirty date,because one invoice may include more than 1 same stockcodes,so we just combined them into a new table
-
-
--- [1].1 Merging into a new table
+-- Merging into a new table
 CREATE TABLE combined_online_retail AS
 SELECT invoice_no, stock_code, description, quantity, invoice_date, unit_price, customer_id, country
 FROM online_retail_2009_2010
@@ -40,48 +21,27 @@ SELECT invoice_no, stock_code, description, quantity, invoice_date, unit_price, 
 FROM online_retail_2010_2011;
 
 
+-- [1] Checking duplicate rows
+WITH CTE AS (
+    SELECT *,
+           ROW_NUMBER() OVER (PARTITION BY invoice_no, stock_code, description, quantity, invoice_date, unit_price, customer_id, country) AS RowNum
+    FROM combined_online_retail
+)
+SELECT *
+FROM CTE
+WHERE RowNum > 1
+ORDER BY RowNum DESC;
+-- Result: 537,594 duplicate rows, the maximum numbers of repetition is 20, and the minimum is 2.
+※ Duplicates may not the dirty date,because one invoice may include more than 1 same stockcodes,so we just combined them into a new table
+
+
 /* [2] Checking MISSING value 
-		- NULL
-		- empty string 
 		- '0'
+		- NULL
+		- empty string
 */
 
--- [2].1 Checking NULL Value
-SELECT
-  SUM(invoice_no IS NULL) AS invoice_no_null_count,
-  SUM(stock_code IS NULL) AS stock_code_null_count,
-  SUM(description IS NULL) AS description_null_count,
-  SUM(invoice_date IS NULL) AS invoice_date_null_count,
-  SUM(quantity IS NULL) AS quantity_null_count,
-  SUM(customer_id IS NULL) AS customer_id_null_count,
-  SUM(country IS NULL) AS country_null_count
-FROM cleaned_online_retail;
-
-/* Conclusion of [2].1
-There are no null values in the cleaned table.
-*/
-
-
--- [2].2 Checking empty string '' Value
-
-SELECT
-  SUM(TRIM(invoice_no) = '') AS invoice_no_blank,
-  SUM(TRIM(stock_code) = '') AS stock_code_blank,
-  SUM(TRIM(description) = '') AS description_blank,
-  SUM(TRIM(invoice_date) = '') AS invoice_date_blank,
-  SUM(TRIM(quantity) = '') AS quantity_blank,
-  SUM(TRIM(customer_id) = '') AS customer_id_blank,
-  SUM(TRIM(country) = '') AS country_blank_count
-FROM cleaned_online_retail;
--- Result: 4,275 cells with empty string in Description column and 235.151 cells with empty string in CustomerID column and the rest do not contain empty string cells.
-
-/* Conclusion of [2].2
-There are Description and CustomerID column contain empty string value.
-*/
-
-
--- [2].3 Checking '0' Value
-
+-- [2].1 Checking '0' Value
 SELECT
     SUM(CASE WHEN invoice_no = '0' THEN 1 ELSE 0 END) AS InvoiceNo_0_count,
     SUM(CASE WHEN stock_code = '0' THEN 1 ELSE 0 END) AS StockCode_0_count,
@@ -93,9 +53,55 @@ SELECT
 FROM cleaned_online_retail;
 
 
-/* Conclusion of [2].3
+/* Conclusion of [2].1
 There is only UnitPrice column contain '0' value with 6032 cells
 */
+
+-- [2].2 Checking NULL Value
+SELECT
+  SUM(invoice_no IS NULL) AS invoice_no_null_count,
+  SUM(stock_code IS NULL) AS stock_code_null_count,
+  SUM(description IS NULL) AS description_null_count,
+  SUM(invoice_date IS NULL) AS invoice_date_null_count,
+  SUM(quantity IS NULL) AS quantity_null_count,
+  SUM(customer_id IS NULL) AS customer_id_null_count,
+  SUM(country IS NULL) AS country_null_count
+FROM combined_online_retail;
+
+/* Conclusion of [2].2
+There are no null values in the cleaned table.
+*/
+
+-- [2].3 Checking empty string '' Value
+SELECT
+  SUM(TRIM(invoice_no) = '') AS invoice_no_blank,
+  SUM(TRIM(stock_code) = '') AS stock_code_blank,
+  SUM(TRIM(description) = '') AS description_blank,
+  SUM(TRIM(invoice_date) = '') AS invoice_date_blank,
+  SUM(TRIM(quantity) = '') AS quantity_blank,
+  SUM(TRIM(customer_id) = '') AS customer_id_blank,
+  SUM(TRIM(country) = '') AS country_blank_count
+FROM combined_online_retail;
+-- Result: 4,275 cells with empty string in Description column and 235.151 cells with empty string in CustomerID column and the rest do not contain empty string cells.
+
+/* Conclusion of [2].3
+There are Description and CustomerID column contain empty string value.
+*/
+
+-- [2].4 Changing empty string '' into NUL value 
+DROP TABLE IF EXISTS cleaned_final;
+
+CREATE TABLE cleaned_final AS
+SELECT
+  invoice_no,
+  stock_code,
+  NULLIF(TRIM(description), '') AS description,
+  quantity,
+  invoice_date,
+  unit_price,
+  NULLIF(TRIM(customer_id), '') AS customer_id,
+  country
+FROM combined_online_retail;
 
 
 

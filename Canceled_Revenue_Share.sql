@@ -1,6 +1,3 @@
-/*
-Canceled Revenue Share 
-*/
 SELECT 
    SUM(CASE 
          WHEN invoice_no LIKE 'C%' AND unit_price * quantity < 0 THEN ABS(unit_price * quantity) 

@@ -1,6 +1,3 @@
-/*
-Customer segments by RFM (Recency,Frequency,Monetary)
-*/
 WITH orders AS (
    SELECT
        customer_id,

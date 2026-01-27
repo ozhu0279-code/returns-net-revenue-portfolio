@@ -1,6 +1,3 @@
-/*
-Cancellation Rate per Month.
-*/
 SELECT 
   DATE_FORMAT(invoice_date, '%Y-%m') AS month,
   COUNT(DISTINCT invoice_no) AS total_orders,

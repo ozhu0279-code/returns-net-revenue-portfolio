@@ -34,10 +34,10 @@ seg AS (
          monetary,
          CASE
              WHEN recency_score >= 4 AND frequency_score >= 4 AND monetary_score >= 4 THEN 'Champions'
-             WHEN recency_score >= 4 AND frequency_score >= 3 AND monetary_score >= 3 THEN 'Loyal Customers'
-             WHEN recency_score >= 4 AND frequency_score <= 2 THEN 'New/Promising Customers'
-             WHEN recency_score <= 2 AND frequency_score >= 3 THEN 'At Risk Customers'
-             WHEN recency_score = 1 THEN'Lost Customers'
+             WHEN recency_score >= 4 AND frequency_score >= 3 THEN 'Loyal'
+             WHEN recency_score >= 4 AND frequency_score <= 2 THEN 'New/Promising'
+             WHEN recency_score <= 2 AND frequency_score >= 3 THEN 'At Risk'
+             WHEN recency_score = 1 THEN'Lost'
              ELSE 'Others'
          END AS segment
       FROM rfm_scored
@@ -50,3 +50,5 @@ SELECT
 FROM seg
 GROUP BY segment
 ORDER BY gross_revenue DESC;
+
+

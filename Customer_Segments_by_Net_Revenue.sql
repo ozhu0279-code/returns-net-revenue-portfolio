@@ -5,7 +5,7 @@ WITH base AS (
     DATE(invoice_date) AS order_date,
     unit_price,
     quantity
-  FROM combined_online_retail
+  FROM cleaned_final
   WHERE customer_id IS NOT NULL
     AND unit_price IS NOT NULL
     AND quantity IS NOT NULL

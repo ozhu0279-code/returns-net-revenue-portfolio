@@ -1,5 +1,5 @@
 /*
-Top20 skus by canceled revenue
+Top10 skus by canceled revenue
 */
 WITH SKU AS (
   SELECT
@@ -21,12 +21,12 @@ SELECT
     canceled_revenue
 FROM SKU
 ORDER BY canceled_revenue DESC
-LIMIT 20;
+LIMIT 10;
 
 
 
 /*
-Top 20 countries by canceled revenue
+Top 10 countries by canceled revenue
 */
 WITH ctr AS (
   SELECT
@@ -48,4 +48,4 @@ SELECT
     canceled_revenue
 FROM ctr
 ORDER BY canceled_revenue DESC
-LIMIT 20;
+LIMIT 10;

@@ -6,7 +6,7 @@ WITH base AS (
     unit_price,
     quantity,
     unit_price * quantity AS line_amount
-  FROM combined_online_retail
+  FROM cleaned_final
 ),
 
 cancel_inv AS (

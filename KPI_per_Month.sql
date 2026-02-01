@@ -37,7 +37,7 @@ gross_m AS (
     month,
     SUM(line_amount) AS gross_revenue
   FROM base
-  WHERE UPPER(TRIM(invoice_no)) NOT LIKE 'C%'
+  WHERE UPPER(TRIM(invoice_no)) NOT LIKE 'C%' AND UPPER(TRIM(invoice_no)) NOT LIKE 'A%'
     AND line_amount > 0
   GROUP BY month
 ),

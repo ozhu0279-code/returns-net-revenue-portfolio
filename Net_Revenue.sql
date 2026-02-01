@@ -15,7 +15,7 @@ gross_r AS (
   SELECT
     SUM(invoice_amount) AS gross_revenue
   FROM inv
-  WHERE UPPER(TRIM(invoice_no)) NOT LIKE 'C%'
+  WHERE UPPER(TRIM(invoice_no)) NOT LIKE 'C%' AND UPPER(TRIM(invoice_no)) NOT LIKE 'A%'
     AND invoice_amount > 0
 ),
 canceled_r AS (

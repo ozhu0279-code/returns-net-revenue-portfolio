@@ -5,7 +5,7 @@ WITH SKU AS (
   SELECT
      stock_code,
          SUM (CASE
-            WHEN unit_price * quantity > 0 THEN unit_price * quantity
+            WHEN UPPER(TRIM(invoice_no)) NOT LIKE 'A%' AND unit_price * quantity > 0 THEN unit_price * quantity
             ELSE 0
          END) AS gross_revenue,
          SUM (CASE
@@ -32,7 +32,7 @@ WITH ctr AS (
   SELECT
      country,
          SUM (CASE
-            WHEN unit_price * quantity > 0 THEN unit_price * quantity
+            WHEN UPPER(TRIM(invoice_no)) NOT LIKE 'A%' AND unit_price * quantity > 0 THEN unit_price * quantity
             ELSE 0
          END) AS gross_revenue,
          SUM (CASE

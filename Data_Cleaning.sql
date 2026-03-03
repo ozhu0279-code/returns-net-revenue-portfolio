@@ -32,7 +32,8 @@ FROM CTE
 WHERE RowNum > 1
 ORDER BY RowNum DESC;
 -- Result: 537,594 duplicate rows, the maximum numbers of repetition is 20, and the minimum is 2.
-※ Duplicates may not the dirty date,because one invoice may include more than 1 same stockcodes,so we just combined them into a new table
+
+※ Duplicates may not the dirty data,because one invoice may include more than 1 same stockcodes,so we just combined them into a new table.
 
 
 /* [2] Checking MISSING value 

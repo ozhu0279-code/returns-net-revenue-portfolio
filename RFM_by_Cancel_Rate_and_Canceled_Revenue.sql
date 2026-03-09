@@ -187,9 +187,6 @@ SELECT
   SUM(canceled_orders) AS cancel_orders,
   1.0 * SUM(canceled_orders) / NULLIF(SUM(orders), 0) AS cancel_order_rate,
   SUM(canceled_revenue) AS canceled_revenue_total,
-  1.0 * SUM(canceled_revenue)
-    / NULLIF(SUM(SUM(canceled_revenue)) OVER (), 0)
-    AS canceled_revenue_contribution
 FROM customer_metrics_with_seg
 GROUP BY country, customer_type, rfm_segment
 ORDER BY

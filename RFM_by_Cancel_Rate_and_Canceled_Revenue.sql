@@ -179,6 +179,7 @@ customer_metrics_with_seg AS (
 )
 
 SELECT
+  country,
   customer_type,
   rfm_segment,
   COUNT(DISTINCT customer_id) AS customers,

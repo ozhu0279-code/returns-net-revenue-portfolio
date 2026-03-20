@@ -1,5 +1,6 @@
 WITH base AS (
   SELECT
+    stock_code,
     customer_id,
     country,
     invoice_no,
@@ -7,6 +8,7 @@ WITH base AS (
     unit_price * quantity AS line_amount
   FROM cleaned_final
   WHERE customer_id IS NOT NULL
+  AND stock_code <> 'B%'
 ),
 inv AS (
   SELECT

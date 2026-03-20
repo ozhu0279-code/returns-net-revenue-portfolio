@@ -1,5 +1,6 @@
 WITH base AS (
   SELECT
+    stock_code,
     customer_id,
     country,
     invoice_no,
@@ -7,6 +8,7 @@ WITH base AS (
     unit_price * quantity AS line_amount
   FROM cleaned_final
   WHERE customer_id IS NOT NULL
+  AND stock_code <> 'B%'
 ),
 
 inv AS (
@@ -74,31 +76,9 @@ order_labeled_has_fp AS (
   FROM orders_scope_has_fp
 ),
 
-cancel_only_orders AS (
-  SELECT
-    i.country,
-    i.customer_id,
-    i.invoice_no,
-    i.dt,
-    NULL AS first_purchase_date,
-    1 AS is_cancel,
-    i.invoice_amount,
-    'Cancel-only' AS customer_type
-  FROM inv i
-  JOIN valid_cancel vc
-    ON vc.customer_id = i.customer_id
-   AND vc.invoice_no  = i.invoice_no
-   AND vc.dt          = i.dt
-   AND vc.country     = i.country
-  LEFT JOIN first_purchase fp
-    ON fp.customer_id = i.customer_id
-  WHERE fp.customer_id IS NULL
-),
 
 all_orders_labeled AS (
   SELECT * FROM order_labeled_has_fp
-  UNION ALL
-  SELECT * FROM cancel_only_orders
 ),
 
 purchase_inv AS (
@@ -160,7 +140,7 @@ customer_metrics AS (
 
     CASE WHEN SUM(aol.is_cancel) > 0 THEN 1 ELSE 0 END AS customer_has_cancel
   FROM all_orders_labeled aol
-  WHERE aol.customer_type IN ('New','Returning','Pre-first-purchase cancel','Cancel-only')
+  WHERE aol.customer_type IN ('New','Returning','Pre-first-purchase cancel')
   GROUP BY aol.country, aol.customer_type, aol.customer_id
 ),
 
@@ -186,7 +166,7 @@ SELECT
   SUM(orders) AS total_orders,
   SUM(canceled_orders) AS cancel_orders,
   1.0 * SUM(canceled_orders) / NULLIF(SUM(orders), 0) AS cancel_order_rate,
-  SUM(canceled_revenue) AS canceled_revenue_total,
+  SUM(canceled_revenue) AS canceled_revenue_total
 FROM customer_metrics_with_seg
 GROUP BY country, customer_type, rfm_segment
 ORDER BY

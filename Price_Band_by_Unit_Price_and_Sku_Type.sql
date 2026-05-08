@@ -1,47 +1,10 @@
 WITH base AS (
   SELECT
-    stock_code,
     invoice_no,
+    stock_code,
     unit_price,
     quantity,
-    unit_price * quantity AS line_amount
-  FROM cleaned_final
-),
-
-inv AS (
-  SELECT
-    invoice_no,
-    stock_code,
-    SUM(line_amount) AS invoice_amount
-  FROM base
-  GROUP BY invoice_no, stock_code
-),
-
-gross_r AS (
-  SELECT
-    SUM(invoice_amount) AS gross_revenue
-  FROM inv
-  WHERE UPPER(TRIM(invoice_no)) NOT LIKE 'C%' AND UPPER(TRIM(invoice_no)) NOT LIKE 'A%'
-    AND invoice_amount > 0
-),
-canceled_r AS (
-  SELECT
-    SUM(ABS(invoice_amount)) AS canceled_revenue
-  FROM inv
-  WHERE UPPER(TRIM(invoice_no)) LIKE 'C%'
-    AND invoice_amount < 0
-),
-
-cancel_inv AS (
-  SELECT DISTINCT invoice_no
-  FROM base
-  WHERE UPPER(TRIM(invoice_no)) LIKE 'C%'
-),
-
-tagged_lines AS (
-  SELECT
-    invoice_no,
-    stock_code,
+    unit_price * quantity AS line_amount,
     CASE
       WHEN unit_price < 1 THEN '<1'
       WHEN unit_price < 5 THEN '1-4.99'
@@ -60,36 +23,37 @@ tagged_lines AS (
       ) THEN 'Non-product'
       ELSE 'Product'
     END AS sku_type
-   FROM base
+  FROM cleaned_final
 ),
-
-band_orders AS (
+  
+metrics_step AS (
   SELECT
-    tl.price_band,
-    tl.invoice_no,
-    tl.sku_type,
-    CASE
-      WHEN tl.invoice_no LIKE 'C%'
-       AND tl.invoice_no IN (SELECT invoice_no FROM cancel_inv)
-      THEN 1 ELSE 0
-    END AS is_cancel
-  FROM tagged_lines tl
-  GROUP BY tl.price_band, tl.invoice_no, tl.sku_type
+    price_band,
+    sku_type,
+    COUNT(DISTINCT invoice_no) AS total_orders,
+    COUNT(DISTINCT CASE WHEN UPPER(TRIM(invoice_no)) LIKE 'C%' THEN invoice_no END) AS cancel_orders,
+    SUM(CASE 
+          WHEN UPPER(TRIM(invoice_no)) NOT LIKE 'C%' AND UPPER(TRIM(invoice_no)) NOT LIKE 'A%' AND line_amount > 0 
+          THEN line_amount ELSE 0 
+        END) AS band_gross_revenue,
+    SUM(CASE 
+          WHEN UPPER(TRIM(invoice_no)) LIKE 'C%' AND line_amount < 0 
+          THEN ABS(line_amount) ELSE 0 
+        END) AS band_canceled_revenue
+  FROM base
+  GROUP BY price_band, sku_type
 )
 
 SELECT
   price_band,
   sku_type,
-  COUNT(*) AS total_orders,
-  SUM(is_cancel) AS cancel_orders,
-  1.0 * SUM(is_cancel) / NULLIF(COUNT(*), 0) AS cancel_order_rate,
-  MAX(gr.gross_revenue) AS gross_revenue,
-  MAX(cr.canceled_revenue) AS canceled_revenue,
-  1.0 * MAX(cr.canceled_revenue) / NULLIF(MAX(gr.gross_revenue), 0) AS cancel_revenue_rate
-FROM band_orders
-CROSS JOIN gross_r gr
-CROSS JOIN canceled_r cr
-GROUP BY price_band, sku_type
+  total_orders,
+  cancel_orders,
+  1.0 * cancel_orders / NULLIF(total_orders, 0) AS cancel_rate,
+  band_gross_revenue,
+  band_canceled_revenue,
+  1.0 * band_canceled_revenue / NULLIF(band_gross_revenue, 0) AS canceled_revenue_share
+FROM metrics_step
 ORDER BY
   CASE price_band
     WHEN '<1' THEN 1
@@ -100,3 +64,8 @@ ORDER BY
     WHEN '50-99.99' THEN 6
     ELSE 7
   END;
+
+
+
+
+  

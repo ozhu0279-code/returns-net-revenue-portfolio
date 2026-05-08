@@ -6,17 +6,36 @@ WITH base AS (
     quantity,
     unit_price * quantity AS line_amount
   FROM cleaned_final
-  WHERE unit_price > 0
+),
+
+inv AS (
+  SELECT
+    invoice_no,
+    stock_code,
+    SUM(line_amount) AS invoice_amount
+  FROM base
+  GROUP BY invoice_no, stock_code
+),
+
+gross_r AS (
+  SELECT
+    SUM(invoice_amount) AS gross_revenue
+  FROM inv
+  WHERE UPPER(TRIM(invoice_no)) NOT LIKE 'C%' AND UPPER(TRIM(invoice_no)) NOT LIKE 'A%'
+    AND invoice_amount > 0
+),
+canceled_r AS (
+  SELECT
+    SUM(ABS(invoice_amount)) AS canceled_revenue
+  FROM inv
+  WHERE UPPER(TRIM(invoice_no)) LIKE 'C%'
+    AND invoice_amount < 0
 ),
 
 cancel_inv AS (
-  SELECT
-    invoice_no,
-    stock_code
+  SELECT DISTINCT invoice_no
   FROM base
-  WHERE invoice_no LIKE 'C%'
-  GROUP BY invoice_no, stock_code
-  HAVING SUM(line_amount) < 0
+  WHERE UPPER(TRIM(invoice_no)) LIKE 'C%'
 ),
 
 tagged_lines AS (
@@ -63,8 +82,13 @@ SELECT
   sku_type,
   COUNT(*) AS total_orders,
   SUM(is_cancel) AS cancel_orders,
-  1.0 * SUM(is_cancel) / NULLIF(COUNT(*), 0) AS cancel_order_rate
+  1.0 * SUM(is_cancel) / NULLIF(COUNT(*), 0) AS cancel_order_rate,
+  MAX(gr.gross_revenue) AS gross_revenue,
+  MAX(cr.canceled_revenue) AS canceled_revenue,
+  1.0 * MAX(cr.canceled_revenue) / NULLIF(MAX(gr.gross_revenue), 0) AS cancel_revenue_rate
 FROM band_orders
+CROSS JOIN gross_r gr
+CROSS JOIN canceled_r cr
 GROUP BY price_band, sku_type
 ORDER BY
   CASE price_band

@@ -142,6 +142,8 @@ It is clear to see that all these rows have '0' value at associated cells in "Un
 As description shows the status of products,like discolored,damaged,missing,wet,test and etc,so the author assumed that all these rows are the inventory adjustment. 
 -> We can exclude these rows in product analysis dashboard.
 
+--------------------------------------------------------------------------------------
+
 -- [3].d Checking negative value in Unitprice column
 SELECT *
 FROM online_retail
@@ -176,19 +178,24 @@ FROM online_retail
 WHERE quantity > 0 AND unit_price > 0 AND stock_code <> 'B';
 -- Result: 1,007,895 associated rows.
 
-
 -- Conclusion of CANCELLATION VIEW from initial EDA
 SELECT *
 FROM online_retail
 WHERE quantity < 0 AND invoice_no LIKE 'C%';
--- Result 19,103 rows
-
+-- Result: 19,103 rows
 
 -- Conclusion of Non-product VIEW from initial EDA
 SELECT *
-FROM cleaned_online_retail
-WHERE stock_code
-
+FROM online_retail
+WHERE stock_code IN (
+    'Test001','Test002','S','PADS','Post','M',
+    'Gift_0001_90','Gift_0001_80','Gift_0001_70','Gift_0001_60',
+    'Gift_0001_50','Gift_0001_40','Gift_0001_30','Gift_0001_20',
+    'Gift_0001_10','Gift','DOT','D',
+    'CRUK','C2','C3','BANK CHARGES','B','AMAZONFEE',
+    'ADJUST2','ADJUST'
+);
+-- Result: 5,820 rows
 
 
 

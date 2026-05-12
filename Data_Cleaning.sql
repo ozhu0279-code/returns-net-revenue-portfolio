@@ -165,7 +165,7 @@ Stock code shows letter 'B',which is different from common codes.
 */
 
 -- [3].f Checking non-product data
-As previously mentioned,stock code 'B' is not the usual code,so we need to check non-product data.
+/*As previously mentioned,stock code 'B' is not the usual code,so we need to check non-product data.
 In this dataset,most stock codes are divided into 5 numbers even some of them include 1 letter additionally.So stock codes usually contain 5 or 6 digits that 5 numbers or 5 numbers plus 1 letter.
 However,part of stock codes are different,like 'B','S','Test001' and etc.
 So the auther summerize all non-product codes stored in excel file to avoid the noise during the calculation of revenue.

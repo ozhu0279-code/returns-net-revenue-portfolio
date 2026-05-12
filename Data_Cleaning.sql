@@ -179,7 +179,7 @@ WHERE quantity > 0 AND unit_price > 0 AND stock_code <> 'B';
 
 -- Conclusion of CANCELLATION VIEW from initial EDA
 SELECT *
-FROM cleaned_online_retail
+FROM online_retail
 WHERE quantity < 0 AND invoice_no LIKE 'C%';
 -- Result 19,103 rows
 

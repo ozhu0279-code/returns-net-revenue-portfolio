@@ -31,9 +31,18 @@ SELECT *
 FROM CTE
 WHERE RowNum > 1
 ORDER BY RowNum DESC;
--- Result: 537,594 duplicate rows, the maximum numbers of repetition is 20, and the minimum is 2.
+-- Result: 34,335 duplicate rows, the maximum numbers of repetition is 20, and the minimum is 2.
 
-※ Duplicates may not the dirty data,because one invoice may include more than 1 same stockcodes,so we just combined them into a new table.
+/* Conclusion of [1]
+These complete duplicate rows should be deleted because they may reduce the accuracy on calculation of the total order quantity and total sales amount and cause the interference of inflated data on decision-making.
+*/
+
+-- [1].1 Deleting duplicate rows
+CREATE TABLE online_retail_clean AS
+SELECT DISTINCT *
+FROM combined_online_retail;
+
+SELECT COUNT(*) FROM online_retail_clean;
 
 
 /* [2] Checking MISSING value 
@@ -51,11 +60,11 @@ SELECT
     SUM(CASE WHEN unit_price = '0' THEN 1 ELSE 0 END) AS UnitPrice_0_count,
     SUM(CASE WHEN customer_id = '0' THEN 1 ELSE 0 END) AS CustomerID_0_count,
     SUM(CASE WHEN country = '0' THEN 1 ELSE 0 END) AS Country_0_count
-FROM cleaned_online_retail;
-
+FROM online_retail_clean;
+-- Result: There is only UnitPrice column contain '0' value with 6,032 cells.
 
 /* Conclusion of [2].1
-There is only UnitPrice column contain '0' value with 6032 cells
+'0' values cannot represent the purchase behavior from customers.These are the outliers which may cause the pull-down of average sales price in the product analysis.So these values should be excluded in the query.
 */
 
 -- [2].2 Checking NULL Value
@@ -67,7 +76,7 @@ SELECT
   SUM(quantity IS NULL) AS quantity_null_count,
   SUM(customer_id IS NULL) AS customer_id_null_count,
   SUM(country IS NULL) AS country_null_count
-FROM combined_online_retail;
+FROM online_retail_clean;
 
 /* Conclusion of [2].2
 There are no null values in the cleaned table.
@@ -82,17 +91,17 @@ SELECT
   SUM(TRIM(quantity) = '') AS quantity_blank,
   SUM(TRIM(customer_id) = '') AS customer_id_blank,
   SUM(TRIM(country) = '') AS country_blank_count
-FROM combined_online_retail;
--- Result: 4,275 cells with empty string in Description column and 235.151 cells with empty string in CustomerID column and the rest do not contain empty string cells.
+FROM online_retail_clean;
+-- Result: 4,275 cells with empty string in Description column and 235,151 cells with empty string in CustomerID column.
 
 /* Conclusion of [2].3
-There are Description and CustomerID column contain empty string value.
+For Description column,the empty string has no effect on the following analysis,while in CustomerID column should be excluded in the analysis with RFM Model. 
 */
 
--- [2].4 Changing empty string '' into NUL value 
-DROP TABLE IF EXISTS cleaned_final;
+-- [2].4 Changing empty string '' into NULL value 
+DROP TABLE IF EXISTS online_retail;
 
-CREATE TABLE cleaned_final AS
+CREATE TABLE online_retail AS
 SELECT
   invoice_no,
   stock_code,
@@ -102,149 +111,69 @@ SELECT
   unit_price,
   NULLIF(TRIM(customer_id), '') AS customer_id,
   country
-FROM combined_online_retail;
+FROM online_retail_clean;
 
 
 
 /* [3] Checking Invalid Data
-		- Negative value in "Quantity" column - NEGATIVE QUANTITY / POSITIVE QUANTITY
-		- The negative and '0' value in "UnitPrice" column - NEGATIVE UNITPRICE / 0 UNITPRICE
+		- Negative value in "Quantity" and "UnitPrice" column
+		- Non-product data
 */
 
--- [3].a Checking negative value in Quantity column - NEGATIVE QUANTITY
-SELECT COUNT(*)
-FROM cleaned_online_retail
+-- [3].a Checking negative value in Quantity column
+SELECT *
+FROM online_retail
 WHERE quantity < 0;
--- There are 22,496 rows has values < 0 in Quantity column
--- Need to identify the meaning of these rows -> Check with other important columns.
+-- There are 22,496 rows including negative values in Quantity column
+-- Most of them are canceled orders because invoice number begins with letter 'C',but some of them shows '0' value in "UnitPrice" column while there are no letter 'C' amongst these invoice numbers.
 
 -- [3].b Checking negative value in Quantity together win C InvoiceNo - NEGATIVE QUANTITY - CANCELLATION
 SELECT *
-FROM cleaned_online_retail
+FROM online_retail
 WHERE quantity < 0 AND invoice_no LIKE 'C%';
 -- Result: 19,103 rows of cancellation
--- ->can include these rows in Cancelation Dashboard
 
--- [3].c Checking negative Quantitive, C InvoiceNo and 0 = UnitPrice - NEGATIVE QUANTITY
+-- [3].c Checking negative value in Quantity together without C InvoiceNo - NEGATIVE QUANTITY - TEST
 SELECT *
-FROM cleaned_online_retail
-WHERE quantity < 0 AND invoice_no LIKE 'C%' AND unit_price = 0;
--- Result: no associated rows
-
--- [3].d Checking negative Quantitive, C InvoiceNo and UnitPrice > 0 - NEGATIVE QUANTITY - CANCELLATION 
-SELECT *
-FROM cleaned_online_retail
-WHERE quantity < 0 AND invoice_no LIKE 'C%' AND unit_price > 0 AND stock_code<>'B';
--- Result: 19,103 rows
-
--- [3].e Checking negative Quantitive, C InvoiceNo and UnitPrice < 0 - NEGATIVE QUANTITY
-SELECT *
-FROM cleaned_online_retail
-WHERE quantity < 0 AND invoice_no LIKE 'C%' AND unit_price < 0；
--- Result: no associated rows.
-
--- [3].f Checking negative value in Quantity together without C InvoiceNo - NEGATIVE QUANTITY - TEST
-SELECT *
-FROM cleaned_online_retail
+FROM online_retail
 WHERE quantity < 0 AND invoice_no NOT LIKE 'C%';
 /* Result: there are 3,393 associated rows. 
-It is clearly to see that all these rows have '0' value at associated cells in UnitPrice column; 
-and empty string cell at associated cells in CustomerID column. 
-So the author assumed that all these rows are the result of system test 
--> We can exclude these rows in our Sales Dashboard and Cancellation DashBoard
--> Should we delete them in Sales view
--> Maybe I can group them into a TEST table */
+It is clear to see that all these rows have '0' value at associated cells in "UnitPrice" column and all invoice numbers have no letter "C" at the begnning.
+As description shows the status of products,like discolored,damaged,missing,wet,test and etc,so the author assumed that all these rows are the inventory adjustment. 
+-> We can exclude these rows in product analysis dashboard.
 
--- [3].g Checking negative value in Quantity together without C InvoiceNo, UnitPricxce = 0 - NEGATIVE QUANTITY - TEST
+-- [3].d Checking negative value in Unitprice column
 SELECT *
-FROM cleaned_online_retail
-WHERE quantity < 0 AND invoice_no NOT LIKE 'C%' AND unit_price ='0';
--- Result: same with (f)
+FROM online_retail
+WHERE unit_price < 0;
+---Result: 5 rows
+/* Conclusion of [3].d
+These rows show the adjustment of bad debt,so they should be excluded in the SQL query.
+Invoice number begins with letter 'A',which is different from canceled orders,so it need to be further checked.
+*/
 
--- [3].h Checking negative value in Quantity together without C InvoiceNo, UnitPricxce > 0 - NEGATIVE QUANTITY 
+-- [3].e InvoiceNo starts with letter A
 SELECT *
-FROM cleaned_online_retail
-WHERE quantity < 0 AND invoice_no NOT LIKE 'C%' AND unit_price > 0;
--- Result: no associated rows.
+FROM online_retail
+WHERE unit_price < 0;
+---Result: 6 rows
+/* Conclusion of [3].e
+There is 1 special row that unitprice shows positive.So it should be ruled out in the calculation of sales view.
+Stock code shows letter 'B',which is different from common codes.
+*/
 
--- [3].j Checking negative value in Quantity together without C InvoiceNo, UnitPricxce < 0 - NEGATIVE QUANTITY 
-SELECT *
-FROM cleaned_online_retail
-WHERE quantity < 0 AND invoice_no NOT LIKE 'C%' AND unit_price < 0;
--- Result: no associated rows.
+-- [3].f Checking non-product data
+As previously mentioned,stock code 'B' is not the usual code,so we need to check non-product data.
+In this dataset,most stock codes are divided into 5 numbers even some of them include 1 letter additionally.So stock codes usually contain 5 or 6 digits that 5 numbers or 5 numbers plus 1 letter.
+However,part of stock codes are different,like 'B','S','Test001' and etc.
+So the auther summerize all non-product codes stored in excel file to avoid the noise during the calculation of revenue.
 
--- [3].k Checking negative value in Quantity together without C InvoiceNo, UnitPrice = 0, CustomerID = NULL - NEGATIVE QUANTITY - TEST
-SELECT *
-FROM cleaned_online_retail
-WHERE quantity < 0 AND invoice_no NOT LIKE 'C%' AND unit_price = 0 AND customer_id = '';
--- Result: 3,393 rows (same with f)
+--------------------------------------------------------------------------------------
 
--- [3].l Checking negative value in Quantity together without C InvoiceNo, UnitPrice = 0, CustomerID not null - NEGATIVE QUANTITY
-SELECT *
-FROM cleaned_online_retail
-WHERE quantity < 0 AND invoice_no NOT LIKE 'C%' AND unit_price = 0 AND customer_id <>'';
--- Result: no associated rows
-
--- [3].m Checking negative value in Quantity together without C InvoiceNo, UnitPrice > 0, CustomerID not null - NEGATIVE QUANTITY
-SELECT *
-FROM cleaned_online_retail
-WHERE quantity < 0 AND invoice_no NOT LIKE 'C%' AND unit_price > 0 AND customer_id <>'';
--- Result: no associated rows
-
--- [3].n Checking negative value in Quantity together without C InvoiceNo, UnitPrice < 0, CustomerID not null - NEGATIVE QUANTITY
-SELECT *
-FROM cleaned_online_retail
-WHERE quantity < 0 AND invoice_no NOT LIKE 'C%' AND unit_price < 0 AND customer_id <>'';
--- Result: no associated rows
-
--------------------------------------------------------------------------------------------------------------------------------------------
--- [3].o NEGATIVE UnitPrice
-SELECT *
-FROM cleaned_online_retail
-WHERE quantity < 0;
--- Result: 22,496 rows
-
--- [3].p InvoiceNo start with letter A - OUT OF SALE, CANCELLATION, TEST -> VAGUE rows
-SELECT *
-FROM cleaned_online_retail
-WHERE invoice_no LIKE 'A%';
--- It includes 6 rows,which description shows 'adjust bad debt'.
-
--- [3].q UnitPrice = 0 
-SELECT *
-FROM cleaned_online_retail
-WHERE unit_price = 0;
--- 6,032 rows, which views do these row belong to? NOT SALE. BUT TEST OR CANCELLATION?
-
--- [3].r UnitPrice = 0, InvoiceNo start with letter C
-SELECT *
-FROM cleaned_online_retail
-WHERE unit_price = 0 AND invoice_no LIKE 'C%'
--- no associated rows
-
--- [3].s UnitPrice = 0 , InvoiceNo not start with letter C 
-SELECT *
-FROM cleaned_online_retail
-WHERE UnitPrice = 0 AND InvoiceNo NOT LIKE 'C%'
--- 6,032 rows, same result with q -> NOT SALE AND CANCELLATION. ONLY TEST?
-
--- [3].t UnitPrice = 0, InvoiceNo not start with letter C, Quantity > 0, CustomerID IS NULL - TEST view
-SELECT *
-FROM cleaned_online_retail
-WHERE unit_price = 0 AND invoice_no NOT LIKE 'C%' AND quantity > 0 AND customer_id = '';
--- 2,551 rows - TEST view (no real customer since CustomerID is empty, No revenue since UnitPrice = 0)
-
--- [3].u UnitPrice = 0, InvoiceNo not start with letter C, Quantity > 0, CustomerID IS NOT NULL - SALE view
-SELECT *
-FROM cleaned_online_retail
-WHERE unit_price = 0 AND invoice_no NOT LIKE 'C%' AND quantity > 0 AND customer_id <> '';
--- 88 rows - would be promotion item in an invoice with multiple products -> SALE view
-
----------------------------------------------------------------------------------------
 -- Conclusion of SALE VIEW from initial EDA
 SELECT * 
-FROM cleaned_online_retail
-WHERE quantity > 0 AND unit_price > 0  AND stock_code <> 'B';
+FROM online_retail
+WHERE quantity > 0 AND unit_price > 0 AND stock_code <> 'B';
 -- Result: 1,007,895 associated rows.
 
 
@@ -252,21 +181,16 @@ WHERE quantity > 0 AND unit_price > 0  AND stock_code <> 'B';
 SELECT *
 FROM cleaned_online_retail
 WHERE quantity < 0 AND invoice_no LIKE 'C%';
--- Result 19,103 rows (from b and d above)
+-- Result 19,103 rows
 
 
--- Conclusion of TEST VIEW from initial EDA
+-- Conclusion of Non-product VIEW from initial EDA
 SELECT *
 FROM cleaned_online_retail
-WHERE unit_price = 0 AND invoice_no NOT LIKE 'C%' AND customer_id = '';
--- Result: 5,944 rows ( from f,g,k,t above)
+WHERE stock_code
 
 
--- Conclusion of VAGUE rows from initial EDA (Description shows 'adjust bad debt'.Stock_code shows 'B')
-SELECT *
-FROM cleaned_online_retail
-WHERE invoice_no LIKE 'A%';
--- Result: 6 rows
+
 
 
 

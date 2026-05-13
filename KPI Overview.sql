@@ -1,3 +1,4 @@
+--Gross/Canceled/Net revenue
 WITH base AS (
   SELECT
     invoice_no,

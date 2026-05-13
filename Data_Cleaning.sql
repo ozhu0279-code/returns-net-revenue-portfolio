@@ -176,7 +176,7 @@ So the auther summerize all non-product codes stored in excel file to avoid the 
 -- Conclusion of SALE VIEW from initial EDA
 SELECT * 
 FROM online_retail
-WHERE quantity > 0 AND unit_price > 0 AND stock_code <> 'B';
+WHERE quantity > 0 AND unit_price > 0;
 -- Result: 1,007,895 associated rows.
 
 -- Conclusion of CANCELLATION VIEW from initial EDA

@@ -4,7 +4,6 @@ WITH base AS (
     invoice_no,
     quantity,
     unit_price,
-    stock_code, 
     quantity * unit_price AS line_amount 
   FROM online_retail
 ),
@@ -35,7 +34,6 @@ WITH base AS (
     invoice_no,
     quantity,
     unit_price,
-    stock_code, 
     quantity * unit_price AS line_amount,
   CASE 
     WHEN stock_code IN (
@@ -111,7 +109,6 @@ WITH base AS (
     invoice_no,
     quantity,
     unit_price,
-    stock_code, 
     quantity * unit_price AS line_amount,
   CASE 
     WHEN stock_code IN (

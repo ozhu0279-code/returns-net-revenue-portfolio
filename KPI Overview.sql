@@ -92,8 +92,7 @@ WITH base AS (
   FROM online_retail
 ),
 order_summary AS (
-  SELECT 
-    invoice_no,
+  SELECT DISTINCT invoice_no,
     MAX(CASE WHEN invoice_no LIKE 'C%' AND quantity < 0 THEN 1 ELSE 0 END) AS is_canceled
   FROM base
   WHERE product_type = 'Product'

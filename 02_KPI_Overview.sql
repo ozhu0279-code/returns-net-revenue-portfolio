@@ -98,10 +98,10 @@ FROM base
 WHERE product_type = 'Product'
 )
 SELECT 
-  os.total_orders,
-  os.canceled_orders,
-  1.0 * os.canceled_orders / NULLIF(os.total_orders, 0) AS cancel_rate
-FROM cancel_rate os;
+  total_orders,
+  canceled_orders,
+  1.0 * canceled_orders / NULLIF(total_orders, 0) AS cancel_rate
+FROM orders_summary;
 
 
 --Canceled Revenue Share (only product data)

@@ -7,8 +7,9 @@ WITH base AS (
     unit_price,
     quantity * unit_price AS line_amount
   FROM online_retail
-)
-SELECT
+),
+revenue_calculation AS (
+  SELECT
   month,
   SUM(CASE 
         WHEN quantity > 0 AND unit_price > 0 
@@ -18,12 +19,16 @@ SELECT
   SUM(CASE 
         WHEN quantity < 0 AND invoice_no LIKE 'C%'
         THEN ABS(line_amount) ELSE 0 
-      END) AS canceled_revenue,
-  
-  SUM(CASE WHEN quantity > 0 AND unit_price > 0 THEN line_amount ELSE 0 END) - 
-  SUM(CASE WHEN quantity < 0 AND invoice_no LIKE 'C%' THEN ABS(line_amount) ELSE 0 END) AS net_revenue
-FROM base
-GROUP BY month
+      END) AS canceled_revenue
+  FROM base
+  GROUP BY month
+)
+SELECT
+  month,
+  revenue_calculation.gross_revenue,
+  revenue_calculation.canceled_revenue,
+  (revenue_calculation.gross_revenue - revenue_calculation.canceled_revenue) AS net_revenue
+FROM revenue_calculation
 ORDER BY month;
 
 --Gross/Canceled/Net Revenue per month(only product data)
@@ -45,7 +50,8 @@ WITH base AS (
       ELSE 'Product'
     END AS product_type
   FROM online_retail
-)
+),
+revenue_calculation AS (
 SELECT
   month,
   SUM(CASE 
@@ -56,12 +62,16 @@ SELECT
   SUM(CASE 
         WHEN quantity < 0 AND invoice_no LIKE 'C%' AND product_type = 'Product' 
         THEN ABS(line_amount) ELSE 0 
-      END) AS canceled_revenue,
-      
-  SUM(CASE WHEN quantity > 0 AND unit_price > 0 AND product_type = 'Product' THEN line_amount ELSE 0 END) - 
-  SUM(CASE WHEN quantity < 0 AND invoice_no LIKE 'C%' AND product_type = 'Product' THEN ABS(line_amount) ELSE 0 END) AS net_revenue
+      END) AS canceled_revenue
 FROM base
 GROUP BY month
+)
+SELECT
+  month,
+  revenue_calculation.gross_revenue,
+  revenue_calculation.canceled_revenue,
+  (revenue_calculation.gross_revenue - revenue_calculation.canceled_revenue) AS net_revenue
+FROM revenue_calculation
 ORDER BY month;
 
 --Cancel Rate/Canceled Revenue Share per Month(only product data)

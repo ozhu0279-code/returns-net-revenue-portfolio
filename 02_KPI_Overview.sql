@@ -76,6 +76,7 @@ WITH base AS (
   SELECT 
     invoice_no,
     quantity,
+    unit_price,
     CASE 
       WHEN stock_code IN (
         'Test001','Test002','S','PADS','Post','M',
@@ -89,18 +90,18 @@ WITH base AS (
     END AS product_type
   FROM online_retail
 ),
-order_summary AS (
-  SELECT DISTINCT invoice_no,
-    MAX(CASE WHEN invoice_no LIKE 'C%' AND quantity < 0 THEN 1 ELSE 0 END) AS is_canceled
-  FROM base
-  WHERE product_type = 'Product'
-  GROUP BY invoice_no
+orders_summary AS (
+SELECT 
+  COUNT(DISTINCT CASE WHEN quantity > 0 AND unit_price > 0 THEN invoice_no END) AS total_orders,
+  COUNT(DISTINCT CASE WHEN invoice_no LIKE 'C%' AND quantity < 0 THEN invoice_no END) AS canceled_orders
+FROM base
+WHERE product_type = 'Product'
 )
 SELECT 
-  COUNT(invoice_no) AS total_orders,
-  SUM(is_canceled) AS canceled_orders,
-  SUM(is_canceled) * 1.0 / NULLIF(COUNT(invoice_no), 0) AS cancel_rate
-FROM order_summary;
+  os.total_orders,
+  os.canceled_orders,
+  1.0 * os.canceled_orders / NULLIF(os.total_orders, 0) AS cancel_rate
+FROM cancel_rate os;
 
 
 --Canceled Revenue Share (only product data)

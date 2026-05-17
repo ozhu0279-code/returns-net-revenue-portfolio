@@ -92,8 +92,10 @@ WITH base AS (
 ),
 orders_summary AS (
 SELECT 
-  COUNT(DISTINCT CASE WHEN quantity > 0 AND unit_price > 0 THEN invoice_no END) AS total_orders,
-  COUNT(DISTINCT CASE WHEN invoice_no LIKE 'C%' AND quantity < 0 THEN invoice_no END) AS canceled_orders
+  COUNT(DISTINCT CASE WHEN quantity > 0 AND unit_price > 0 
+                      THEN invoice_no END) AS total_orders,
+  COUNT(DISTINCT CASE WHEN invoice_no LIKE 'C%' AND quantity < 0 
+                      THEN invoice_no END) AS canceled_orders
 FROM base
 WHERE product_type = 'Product'
 )

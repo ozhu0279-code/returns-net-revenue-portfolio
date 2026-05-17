@@ -15,7 +15,7 @@
 - **High-impact driver**--Top 10 Countries and SKUs by canceled revenue.
 
 ## Data Quality & Assumption
-- The raw dataset is at transaction-line level (multiple rows per invoice). For SKU-level diagnostics, we aggregated lines to invoice–SKU granularity (InvoiceNo + StockCode) to avoid double counting and ensure consistent driver attribution.
+- When processing the Online Retail dataset, I observed that it is not a conventional dynamic state table, but instead adopts journal-style offsetting records. If independent order numbers are directly counted as the denominator, the calculated cancellation rate will be unreasonably diluted due to the repeated inclusion of cancelled orders (C-orders). Therefore, I strictly restricted the denominator to only positive sales orders, which restored the true business cancellation rate.
 - For time-series KPI trends (orders, cancel rate, canceled revenue share), we keep all transactions including missing CustomerID to avoid selection bias.
 - For customer-level segmentation (RFM, repeat-cancel patterns), we restrict to records with non-null CustomerID.
 - **Limitation** Here, "cancellation/return" is used to approximately represent "post-sale return pressure", which is not equivalent to the entire process of actual returns, but is sufficient for identifying driving factors and optimization opportunities.

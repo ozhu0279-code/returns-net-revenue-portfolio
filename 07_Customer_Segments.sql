@@ -123,7 +123,7 @@ ORDER BY FIELD(f.rfm_segment, 'Champions', 'Loyal', 'New/Promising', 'At Risk', 
 
 --SKU Scatter × Price Band × RFM Segments
 WITH constant_thresholds AS (
-  SELECT 540.6 AS p90_threshold, 0.0268 AS avg_cancel_rate
+  SELECT 541 AS p90_threshold, 0.0404 AS avg_cancel_rate
 ),
 
 at_risk_customers AS (

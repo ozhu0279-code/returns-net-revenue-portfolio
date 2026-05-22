@@ -4,6 +4,7 @@ WITH base AS (
     stock_code,
     quantity,
     unit_price,
+    quantity * unit_price AS line_amount,
     CASE 
       WHEN stock_code IN (
         'Test001','Test002','S','PADS','Post','M',
@@ -23,7 +24,9 @@ SELECT
   COUNT(DISTINCT CASE WHEN quantity > 0 AND unit_price > 0 
                       THEN invoice_no END) AS total_orders,
   COUNT(DISTINCT CASE WHEN invoice_no LIKE 'C%' AND quantity < 0 
-                      THEN invoice_no END) AS canceled_orders
+                      THEN invoice_no END) AS canceled_orders,
+  SUM(CASE WHEN quantity < 0 AND invoice_no LIKE 'C%'
+             THEN ABS(line_amount) ELSE 0 END) AS canceled_revenue
 FROM base
 WHERE product_type = 'Product'
 GROUP BY stock_code
@@ -32,6 +35,7 @@ SELECT
   stock_code,
   total_orders,
   canceled_orders,
+  canceled_revenue,
   1.0 * canceled_orders / NULLIF(total_orders, 0) AS cancel_rate
 FROM orders_summary
 GROUP BY stock_code

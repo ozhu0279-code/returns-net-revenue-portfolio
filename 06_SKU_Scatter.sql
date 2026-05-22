@@ -39,7 +39,7 @@ SELECT
   1.0 * canceled_orders / NULLIF(total_orders, 0) AS cancel_rate
 FROM orders_summary
 GROUP BY stock_code
-HAVING total_orders > 0
+HAVING total_orders > 0 AND cancel_rate <= 1.0
 ORDER BY total_orders DESC;
 
 

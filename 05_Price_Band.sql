@@ -38,7 +38,9 @@ metrics_step AS (
     SUM(CASE 
         WHEN quantity < 0 AND invoice_no LIKE 'C%' 
         THEN ABS(line_amount) ELSE 0 
-      END) AS band_canceled_revenue
+      END) AS band_canceled_revenue,
+    COUNT(DISTINCT CASE WHEN quantity > 0 AND unit_price > 0 
+          THEN invoice_no END) AS total_orders
   FROM base
   WHERE product_type = 'Product' 
   GROUP BY price_band            
@@ -46,6 +48,7 @@ metrics_step AS (
 
 SELECT
   price_band,
+  total_orders,
   band_gross_revenue,
   band_canceled_revenue,
   1.0 * band_canceled_revenue / NULLIF(band_gross_revenue, 0) AS canceled_revenue_share

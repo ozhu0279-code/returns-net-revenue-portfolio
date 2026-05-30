@@ -89,7 +89,7 @@ orders_summary AS (
           THEN line_amount ELSE 0 
         END) AS gross_revenue
   FROM base
-  WHERE product_type = 'Product
+  WHERE product_type = 'Product'
   GROUP BY stock_code, 
            CASE
              WHEN unit_price < 1 THEN '<1'

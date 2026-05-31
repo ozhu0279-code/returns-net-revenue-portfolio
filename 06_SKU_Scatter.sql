@@ -90,7 +90,7 @@ orders_summary AS (
         END) AS gross_revenue
   FROM base
   WHERE product_type = 'Product'
-  GROUP BY cleaned_stock_code, 
+  GROUP BY stock_code, 
            CASE
              WHEN unit_price < 1 THEN '<1'
              WHEN unit_price < 5 THEN '1-4.99'

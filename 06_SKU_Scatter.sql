@@ -90,7 +90,7 @@ orders_summary AS (
         END) AS gross_revenue
   FROM base
   WHERE product_type = 'Product'
-  GROUP BY stock_code, 
+  GROUP BY cleaned_stock_code, 
            CASE
              WHEN unit_price < 1 THEN '<1'
              WHEN unit_price < 5 THEN '1-4.99'
@@ -103,7 +103,7 @@ orders_summary AS (
 )
 SELECT 
   stock_code,
-  price_band,
+  TRIM(BOTH ' ' FROM REPLACE(REPLACE(REPLACE(price_band, '\n', ''), '\r', ''), '\t', '')) AS cleaned_price_band,
   total_orders,
   canceled_orders,
   canceled_revenue,
@@ -111,4 +111,4 @@ SELECT
   1.0 * canceled_orders / NULLIF(total_orders, 0) AS cancel_rate,
   1.0 * canceled_revenue / NULLIF(gross_revenue, 0) AS canceled_revenue_share
 FROM orders_summary
-ORDER BY stock_code, price_band;
+ORDER BY stock_code, cleaned_price_band;

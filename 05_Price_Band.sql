@@ -29,7 +29,7 @@ WITH base AS (
   
 metrics_step AS (
   SELECT
-    price_band,
+   TRIM(BOTH ' ' FROM REPLACE(REPLACE(REPLACE(price_band, '\n', ''), '\r', ''), '\t', '')) AS cleaned_price_band,
     SUM(CASE 
         WHEN quantity > 0 AND unit_price > 0 
         THEN line_amount ELSE 0 
@@ -43,11 +43,11 @@ metrics_step AS (
           THEN invoice_no END) AS total_orders
   FROM base
   WHERE product_type = 'Product' 
-  GROUP BY price_band            
+  GROUP BY cleaned_price_band        
 )
 
 SELECT
-  price_band,
+  cleaned_price_band AS price_band,
   total_orders,
   band_gross_revenue,
   band_canceled_revenue,

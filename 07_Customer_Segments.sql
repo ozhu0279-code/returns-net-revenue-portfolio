@@ -108,16 +108,16 @@ all_transactions_summary AS (
 )
 
 SELECT 
+  f.customer_id,
   f.rfm_segment,
-  COUNT(DISTINCT f.customer_id) AS total_customers,
   ROUND(SUM(a.user_gross_revenue), 2) AS total_gross_revenue,
   ROUND(SUM(a.user_canceled_revenue), 2) AS total_canceled_revenue,
   ROUND(SUM(a.user_gross_revenue) - SUM(a.user_canceled_revenue), 2) AS total_net_revenue,
   ROUND(1.0 * SUM(a.user_canceled_revenue) / NULLIF(SUM(a.user_gross_revenue), 0), 4) AS canceled_revenue_share
 FROM customer_rfm_labels f
 INNER JOIN all_transactions_summary a ON f.customer_id = a.customer_id
-GROUP BY f.rfm_segment
-ORDER BY FIELD(f.rfm_segment, 'Champions', 'Loyal', 'New/Promising', 'At Risk', 'Lost', 'Others');
+GROUP BY f.customer_id, f.rfm_segment
+ORDER BY FIELD(f.rfm_segment, 'Champions', 'Loyal', 'New/Promising', 'At Risk', 'Lost', 'Others'),f.customer_id;
 
 -------------------------------------------------------------------------------------------------
 

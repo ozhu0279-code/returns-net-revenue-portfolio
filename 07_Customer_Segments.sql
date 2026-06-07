@@ -62,15 +62,10 @@ ORDER BY field(customer_type, 'New', 'Returning', 'Pre_first_purchase_cancel');
 --RFM Segments
 WITH base_perf AS (
   SELECT 
-    customer_id,
-    country,
-    invoice_no,
-    invoice_date,
-    quantity * unit_price AS line_amount
+    customer_id, country, invoice_no, invoice_date, quantity * unit_price AS line_amount
   FROM online_retail
   WHERE customer_id IS NOT NULL
-    AND quantity > 0 
-    AND unit_price > 0
+    AND quantity > 0 AND unit_price > 0
     AND stock_code NOT IN ('Test001','Test002','S','PADS','Post','M','Gift_0001_90','Gift_0001_80','Gift_0001_70','Gift_0001_60','Gift_0001_50','Gift_0001_40','Gift_0001_30','Gift_0001_20','Gift_0001_10','Gift','DOT','D','CRUK','C2','C3','BANK CHARGES','B','AMAZONFEE','ADJUST2','ADJUST')
 ),
 
@@ -108,16 +103,16 @@ all_transactions_summary AS (
 )
 
 SELECT 
-  f.customer_id,
   f.rfm_segment,
+  COUNT(f.customer_id) AS customer_count,
   ROUND(SUM(a.user_gross_revenue), 2) AS total_gross_revenue,
   ROUND(SUM(a.user_canceled_revenue), 2) AS total_canceled_revenue,
-  ROUND(SUM(a.user_gross_revenue) - SUM(a.user_canceled_revenue), 2) AS total_net_revenue,
+  ROUND(SUM(a.user_canceled_revenue) / NULLIF(COUNT(f.customer_id), 0), 2) AS avg_canceled_revenue_per_user,
   ROUND(1.0 * SUM(a.user_canceled_revenue) / NULLIF(SUM(a.user_gross_revenue), 0), 4) AS canceled_revenue_share
 FROM customer_rfm_labels f
 INNER JOIN all_transactions_summary a ON f.customer_id = a.customer_id
-GROUP BY f.customer_id, f.rfm_segment
-ORDER BY FIELD(f.rfm_segment, 'Champions', 'Loyal', 'New/Promising', 'At Risk', 'Lost', 'Others'),f.customer_id;
+GROUP BY f.rfm_segment
+ORDER BY FIELD(f.rfm_segment, 'Champions', 'Loyal', 'New/Promising', 'At Risk', 'Lost', 'Others');
 
 -------------------------------------------------------------------------------------------------
 
@@ -159,8 +154,7 @@ sku_risk_analysis AS (
 )
 
 SELECT 
-  cs.rfm_segment, 
-  cs.customer_id, 
+  cs.rfm_segment,
   CASE
     WHEN s.avg_sku_price < 1 THEN '<1'
     WHEN s.avg_sku_price < 5 THEN '1-4.99'
@@ -182,5 +176,5 @@ WHERE r.invoice_no LIKE 'C%'
   AND s.gross_orders > ct.p90_threshold 
   AND s.cancel_rate > ct.avg_cancel_rate
   AND cs.rfm_segment <> 'Other' 
-GROUP BY 1, 2, 3, 4, 5
-ORDER BY 1, 3 DESC, 6 DESC;
+GROUP BY 1, 2, 3, 4
+ORDER BY 1, 2 DESC, 5 DESC;

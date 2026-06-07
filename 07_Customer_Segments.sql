@@ -146,6 +146,7 @@ sku_risk_analysis AS (
     stock_code,
     AVG(unit_price) AS avg_sku_price, 
     COUNT(DISTINCT CASE WHEN quantity > 0 AND unit_price > 0 THEN invoice_no END) AS gross_orders,
+    COUNT(DISTINCT CASE WHEN quantity < 0 AND invoice_no LIKE 'C%' THEN invoice_no END) AS canceled_orders,
     1.0 * COUNT(DISTINCT CASE WHEN quantity < 0 AND invoice_no LIKE 'C%' THEN invoice_no END)
       / NULLIF(COUNT(DISTINCT CASE WHEN quantity > 0 AND unit_price > 0 THEN invoice_no END), 0) AS cancel_rate
   FROM online_retail
@@ -165,6 +166,8 @@ SELECT
     ELSE '100+'
   END AS price_band,
   s.stock_code,
+  s.gross_orders,
+  s.canceled_orders,
   ROUND(s.cancel_rate * 100, 2) AS cancel_rate_pct,
   SUM(ABS(r.quantity * r.unit_price)) AS at_risk_canceled_revenue
 FROM sku_risk_analysis s
@@ -176,5 +179,5 @@ WHERE r.invoice_no LIKE 'C%'
   AND s.gross_orders > ct.p90_threshold 
   AND s.cancel_rate > ct.avg_cancel_rate
   AND cs.rfm_segment <> 'Other' 
-GROUP BY 1, 2, 3, 4
-ORDER BY 1, 2 DESC, 5 DESC;
+GROUP BY 1, 2, 3, 6
+ORDER BY 1, 2 DESC, 7 DESC;

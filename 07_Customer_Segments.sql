@@ -126,7 +126,7 @@ customer_rfm_labels AS (
     customer_id,
     CASE 
       WHEN r_score <= 2 AND f_score >= 3 THEN 'At Risk'
-      ELSE 'Other' -- 标记为 Other 方便后续过滤
+      ELSE 'Other'
     END AS rfm_segment
   FROM (
     SELECT 
@@ -151,7 +151,6 @@ sku_risk_analysis AS (
     arc.rfm_segment,
     COUNT(DISTINCT CASE WHEN r.quantity > 0 AND r.unit_price > 0 THEN r.invoice_no END) AS at_risk_gross_orders,
     COUNT(DISTINCT CASE WHEN r.quantity < 0 AND r.invoice_no LIKE 'C%' THEN r.invoice_no END) AS at_risk_canceled_orders,
-    -- 现在计算的是 At Risk 客群内的取消率
     1.0 * COUNT(DISTINCT CASE WHEN r.quantity < 0 AND r.invoice_no LIKE 'C%' THEN r.invoice_no END)
       / NULLIF(COUNT(DISTINCT CASE WHEN r.quantity > 0 AND r.unit_price > 0 THEN r.invoice_no END), 0) AS at_risk_cancel_rate,
     SUM(ABS(r.quantity * r.unit_price)) AS at_risk_canceled_revenue,

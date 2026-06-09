@@ -118,44 +118,52 @@ ORDER BY FIELD(f.rfm_segment, 'Champions', 'Loyal', 'New/Promising', 'At Risk', 
 
 --At Risk SKU (SKU Scatter × Price Band × RFM Segments)
 WITH constant_thresholds AS (
-  SELECT 541 AS p90_threshold, 0.0404 AS avg_cancel_rate
+  SELECT 51 AS p90_threshold, 0.0404 AS avg_cancel_rate
 ),
 
-customer_rfm_scores AS (
+customer_rfm_labels AS (
   SELECT 
     customer_id,
-    NTILE(5) OVER (ORDER BY DATEDIFF((SELECT MAX(invoice_date) FROM online_retail), MAX(invoice_date)) DESC) AS r_score,
-    NTILE(5) OVER (ORDER BY COUNT(DISTINCT CASE WHEN quantity > 0 AND unit_price > 0 THEN invoice_no END) ASC) AS f_score
-  FROM online_retail 
-  WHERE customer_id IS NOT NULL 
-    AND quantity > 0 AND unit_price > 0
-  GROUP BY customer_id
-),
-
-customer_segments AS (
-  SELECT *,
     CASE 
       WHEN r_score <= 2 AND f_score >= 3 THEN 'At Risk'
-      ELSE 'Other' 
+      ELSE 'Other' -- 标记为 Other 方便后续过滤
     END AS rfm_segment
-  FROM customer_rfm_scores
+  FROM (
+    SELECT 
+      customer_id,
+      NTILE(5) OVER (ORDER BY DATEDIFF((SELECT MAX(invoice_date) FROM online_retail), MAX(invoice_date)) DESC) AS r_score,
+      NTILE(5) OVER (ORDER BY COUNT(DISTINCT CASE WHEN quantity > 0 AND unit_price > 0 THEN invoice_no END) ASC) AS f_score
+    FROM online_retail 
+    WHERE customer_id IS NOT NULL 
+    GROUP BY customer_id
+  ) t
+),
+
+at_risk_customers AS (
+  SELECT customer_id, rfm_segment 
+  FROM customer_rfm_labels 
+  WHERE rfm_segment = 'At Risk'
 ),
 
 sku_risk_analysis AS (
   SELECT 
-    stock_code,
-    AVG(unit_price) AS avg_sku_price, 
-    COUNT(DISTINCT CASE WHEN quantity > 0 AND unit_price > 0 THEN invoice_no END) AS gross_orders,
-    COUNT(DISTINCT CASE WHEN quantity < 0 AND invoice_no LIKE 'C%' THEN invoice_no END) AS canceled_orders,
-    1.0 * COUNT(DISTINCT CASE WHEN quantity < 0 AND invoice_no LIKE 'C%' THEN invoice_no END)
-      / NULLIF(COUNT(DISTINCT CASE WHEN quantity > 0 AND unit_price > 0 THEN invoice_no END), 0) AS cancel_rate
-  FROM online_retail
-  WHERE stock_code NOT IN ('Test001','Test002','S','PADS','Post','M','Gift_0001_90','Gift_0001_80','Gift_0001_70','Gift_0001_60','Gift_0001_50','Gift_0001_40','Gift_0001_30','Gift_0001_20','Gift_0001_10','Gift','DOT','D','CRUK','C2','C3','BANK CHARGES','B','AMAZONFEE','ADJUST2','ADJUST')
-  GROUP BY stock_code
+    r.stock_code,
+    arc.rfm_segment,
+    COUNT(DISTINCT CASE WHEN r.quantity > 0 AND r.unit_price > 0 THEN r.invoice_no END) AS at_risk_gross_orders,
+    COUNT(DISTINCT CASE WHEN r.quantity < 0 AND r.invoice_no LIKE 'C%' THEN r.invoice_no END) AS at_risk_canceled_orders,
+    -- 现在计算的是 At Risk 客群内的取消率
+    1.0 * COUNT(DISTINCT CASE WHEN r.quantity < 0 AND r.invoice_no LIKE 'C%' THEN r.invoice_no END)
+      / NULLIF(COUNT(DISTINCT CASE WHEN r.quantity > 0 AND r.unit_price > 0 THEN r.invoice_no END), 0) AS at_risk_cancel_rate,
+    SUM(ABS(r.quantity * r.unit_price)) AS at_risk_canceled_revenue,
+    AVG(r.unit_price) AS avg_sku_price
+  FROM online_retail r
+  INNER JOIN at_risk_customers arc ON r.customer_id = arc.customer_id
+  WHERE r.stock_code NOT IN ('Test001', 'Test002', 'S', 'PADS', 'Post', 'M', 'Gift_0001_90', 'Gift_0001_80', 'Gift_0001_70', 'Gift_0001_60', 'Gift_0001_50', 'Gift_0001_40', 'Gift_0001_30', 'Gift_0001_20', 'Gift_0001_10', 'Gift', 'DOT', 'D', 'CRUK', 'C2', 'C3', 'BANK CHARGES', 'B', 'AMAZONFEE', 'ADJUST2', 'ADJUST')
+  GROUP BY r.stock_code, arc.rfm_segment
 )
 
 SELECT 
-  cs.rfm_segment,
+  s.rfm_segment,
   CASE
     WHEN s.avg_sku_price < 1 THEN '<1'
     WHEN s.avg_sku_price < 5 THEN '1-4.99'
@@ -166,18 +174,12 @@ SELECT
     ELSE '100+'
   END AS price_band,
   s.stock_code,
-  s.gross_orders,
-  s.canceled_orders,
-  ROUND(s.cancel_rate * 100, 2) AS cancel_rate_pct,
-  SUM(ABS(r.quantity * r.unit_price)) AS at_risk_canceled_revenue
+  s.at_risk_gross_orders,
+  s.at_risk_canceled_orders,
+  ROUND(s.at_risk_cancel_rate * 100, 2) AS cancel_rate_pct,
+  s.at_risk_canceled_revenue
 FROM sku_risk_analysis s
 CROSS JOIN constant_thresholds ct
-INNER JOIN online_retail r ON s.stock_code = r.stock_code
-INNER JOIN customer_segments cs ON r.customer_id = cs.customer_id
-WHERE r.invoice_no LIKE 'C%' 
-  AND r.quantity < 0
-  AND s.gross_orders > ct.p90_threshold 
-  AND s.cancel_rate > ct.avg_cancel_rate
-  AND cs.rfm_segment <> 'Other' 
-GROUP BY 1, 2, 3, 6
-ORDER BY 1, 2 DESC, 7 DESC;
+WHERE s.at_risk_gross_orders > ct.p90_threshold 
+  AND s.at_risk_cancel_rate > ct.avg_cancel_rate
+ORDER BY 2 DESC, 7 DESC;

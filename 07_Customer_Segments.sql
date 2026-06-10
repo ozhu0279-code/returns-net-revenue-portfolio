@@ -103,7 +103,7 @@ all_transactions_summary AS (
 )
 
 SELECT 
-  f.rfm_segment,
+  f.rfm_segment AS rfm_segment,
   COUNT(f.customer_id) AS customer_count,
   ROUND(SUM(a.user_gross_revenue), 2) AS total_gross_revenue,
   ROUND(SUM(a.user_canceled_revenue), 2) AS total_canceled_revenue,
@@ -162,7 +162,7 @@ sku_risk_analysis AS (
 )
 
 SELECT 
-  s.rfm_segment,
+  s.rfm_segment AS rfm_segment,
   CASE
     WHEN s.avg_sku_price < 1 THEN '<1'
     WHEN s.avg_sku_price < 5 THEN '1-4.99'

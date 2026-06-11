@@ -60,17 +60,62 @@ ORDER BY field(customer_type, 'New', 'Returning', 'Pre_first_purchase_cancel');
 --------------------------------------------------------------------------------------------------
 
 --RFM Segments
-WITH base_perf AS (
-  SELECT 
-    customer_id, country, invoice_no, invoice_date, quantity * unit_price AS line_amount
+WITH first_purchase AS (
+  SELECT
+    customer_id,
+    MIN(invoice_date) AS first_purchase_date
   FROM online_retail
   WHERE customer_id IS NOT NULL
-    AND quantity > 0 AND unit_price > 0
-    AND stock_code NOT IN ('Test001','Test002','S','PADS','Post','M','Gift_0001_90','Gift_0001_80','Gift_0001_70','Gift_0001_60','Gift_0001_50','Gift_0001_40','Gift_0001_30','Gift_0001_20','Gift_0001_10','Gift','DOT','D','CRUK','C2','C3','BANK CHARGES','B','AMAZONFEE','ADJUST2','ADJUST')
+    AND quantity > 0
+    AND unit_price > 0
+    AND stock_code NOT IN (
+      'Test001','Test002','S','PADS','Post','M',
+      'Gift_0001_90','Gift_0001_80','Gift_0001_70','Gift_0001_60',
+      'Gift_0001_50','Gift_0001_40','Gift_0001_30','Gift_0001_20',
+      'Gift_0001_10','Gift','DOT','D','CRUK','C2','C3',
+      'BANK CHARGES','B','AMAZONFEE','ADJUST2','ADJUST'
+    )
+  GROUP BY customer_id
+),
+
+transactions_with_type AS (
+  SELECT
+    r.*,
+    fp.first_purchase_date,
+    CASE
+      WHEN r.invoice_date < fp.first_purchase_date THEN 'Pre_first_purchase_cancel'
+      WHEN r.invoice_date = fp.first_purchase_date THEN 'New'
+      WHEN r.invoice_date > fp.first_purchase_date THEN 'Returning'
+      ELSE 'Other'
+    END AS customer_type
+  FROM online_retail r
+  JOIN first_purchase fp
+    ON r.customer_id = fp.customer_id
+  WHERE r.customer_id IS NOT NULL
+),
+
+base_perf AS (
+  SELECT
+    customer_id,
+    country,
+    invoice_no,
+    invoice_date,
+    quantity * unit_price AS line_amount
+  FROM online_retail
+  WHERE customer_id IS NOT NULL
+    AND quantity > 0
+    AND unit_price > 0
+    AND stock_code NOT IN (
+      'Test001','Test002','S','PADS','Post','M',
+      'Gift_0001_90','Gift_0001_80','Gift_0001_70','Gift_0001_60',
+      'Gift_0001_50','Gift_0001_40','Gift_0001_30','Gift_0001_20',
+      'Gift_0001_10','Gift','DOT','D','CRUK','C2','C3',
+      'BANK CHARGES','B','AMAZONFEE','ADJUST2','ADJUST'
+    )
 ),
 
 customer_rfm_labels AS (
-  SELECT 
+  SELECT
     customer_id,
     CASE
       WHEN r_score >= 4 AND f_score >= 4 AND m_score >= 4 THEN 'Champions'
@@ -81,38 +126,106 @@ customer_rfm_labels AS (
       ELSE 'Others'
     END AS rfm_segment
   FROM (
-    SELECT 
+    SELECT
       customer_id,
-      NTILE(5) OVER (ORDER BY DATEDIFF((SELECT MAX(invoice_date) FROM base_perf), MAX(invoice_date)) DESC) AS r_score,
-      NTILE(5) OVER (ORDER BY COUNT(DISTINCT invoice_no) ASC) AS f_score,
-      NTILE(5) OVER (ORDER BY SUM(line_amount) ASC) AS m_score
+      NTILE(5) OVER (
+        ORDER BY DATEDIFF(
+          (SELECT MAX(invoice_date) FROM base_perf),
+          MAX(invoice_date)
+        ) DESC
+      ) AS r_score,
+      NTILE(5) OVER (
+        ORDER BY COUNT(DISTINCT invoice_no) ASC
+      ) AS f_score,
+      NTILE(5) OVER (
+        ORDER BY SUM(line_amount) ASC
+      ) AS m_score
     FROM base_perf
     GROUP BY customer_id
   ) t
 ),
 
-all_transactions_summary AS (
-  SELECT 
+returning_transactions_summary AS (
+  SELECT
     customer_id,
-    SUM(CASE WHEN quantity > 0 AND unit_price > 0 THEN quantity * unit_price ELSE 0 END) AS user_gross_revenue,
-    SUM(CASE WHEN invoice_no LIKE 'C%' AND quantity < 0 THEN ABS(quantity * unit_price) ELSE 0 END) AS user_canceled_revenue
-  FROM online_retail
-  WHERE customer_id IS NOT NULL
-    AND stock_code NOT IN ('Test001','Test002','S','PADS','Post','M','Gift_0001_90','Gift_0001_80','Gift_0001_70','Gift_0001_60','Gift_0001_50','Gift_0001_40','Gift_0001_30','Gift_0001_20','Gift_0001_10','Gift','DOT','D','CRUK','C2','C3','BANK CHARGES','B','AMAZONFEE','ADJUST2','ADJUST')
+    SUM(
+      CASE
+        WHEN customer_type = 'Returning'
+             AND quantity > 0
+             AND unit_price > 0
+        THEN quantity * unit_price
+        ELSE 0
+      END
+    ) AS user_gross_revenue,
+
+    SUM(
+      CASE
+        WHEN customer_type = 'Returning'
+             AND invoice_no LIKE 'C%'
+             AND quantity < 0
+        THEN ABS(quantity * unit_price)
+        ELSE 0
+      END
+    ) AS user_canceled_revenue
+
+  FROM transactions_with_type
+  WHERE stock_code NOT IN (
+      'Test001','Test002','S','PADS','Post','M',
+      'Gift_0001_90','Gift_0001_80','Gift_0001_70','Gift_0001_60',
+      'Gift_0001_50','Gift_0001_40','Gift_0001_30','Gift_0001_20',
+      'Gift_0001_10','Gift','DOT','D','CRUK','C2','C3',
+      'BANK CHARGES','B','AMAZONFEE','ADJUST2','ADJUST'
+  )
   GROUP BY customer_id
 )
 
-SELECT 
+SELECT
   f.rfm_segment AS rfm_segment,
-  COUNT(f.customer_id) AS customer_count,
-  ROUND(SUM(a.user_gross_revenue), 2) AS total_gross_revenue,
-  ROUND(SUM(a.user_canceled_revenue), 2) AS total_canceled_revenue,
-  ROUND(SUM(a.user_canceled_revenue) / NULLIF(COUNT(f.customer_id), 0), 2) AS avg_canceled_revenue_per_user,
-  ROUND(1.0 * SUM(a.user_canceled_revenue) / NULLIF(SUM(a.user_gross_revenue), 0), 4) AS canceled_revenue_share
+  'Returning' AS customer_type,
+
+  COUNT(DISTINCT CASE
+      WHEN a.user_gross_revenue > 0
+      THEN f.customer_id
+  END) AS customer_count,
+
+  ROUND(SUM(a.user_gross_revenue),2) AS total_gross_revenue,
+
+  ROUND(SUM(a.user_canceled_revenue),2) AS total_canceled_revenue,
+
+  ROUND(
+    SUM(a.user_canceled_revenue)
+    / NULLIF(
+        COUNT(DISTINCT CASE
+          WHEN a.user_gross_revenue > 0
+          THEN f.customer_id
+        END),
+        0
+      ),
+    2
+  ) AS avg_canceled_revenue_per_user,
+
+  ROUND(
+    SUM(a.user_canceled_revenue)
+    / NULLIF(SUM(a.user_gross_revenue),0),
+    4
+  ) AS canceled_revenue_share
+
 FROM customer_rfm_labels f
-INNER JOIN all_transactions_summary a ON f.customer_id = a.customer_id
+JOIN returning_transactions_summary a
+  ON f.customer_id = a.customer_id
+
 GROUP BY f.rfm_segment
-ORDER BY FIELD(f.rfm_segment, 'Champions', 'Loyal', 'New/Promising', 'At Risk', 'Lost', 'Others');
+
+ORDER BY FIELD(
+  f.rfm_segment,
+  'Champions',
+  'Loyal',
+  'New/Promising',
+  'At Risk',
+  'Lost',
+  'Others'
+);
+
 
 -------------------------------------------------------------------------------------------------
 

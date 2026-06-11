@@ -229,8 +229,42 @@ ORDER BY FIELD(
 
 -------------------------------------------------------------------------------------------------
 
---At Risk SKU (SKU Scatter × Price Band × RFM Segments)
-WITH constant_thresholds AS (
+--At Risk SKU (SKU Scatter × Price Band × RFM Segments x New vs. Returning)
+WITH first_purchase AS (
+  SELECT 
+    customer_id,
+    MIN(invoice_date) AS first_purchase_date
+  FROM online_retail
+  WHERE customer_id IS NOT NULL
+    AND quantity > 0
+    AND unit_price > 0
+    AND stock_code NOT IN (
+      'Test001','Test002','S','PADS','Post','M',
+      'Gift_0001_90','Gift_0001_80','Gift_0001_70','Gift_0001_60',
+      'Gift_0001_50','Gift_0001_40','Gift_0001_30','Gift_0001_20',
+      'Gift_0001_10','Gift','DOT','D','CRUK','C2','C3',
+      'BANK CHARGES','B','AMAZONFEE','ADJUST2','ADJUST'
+    )
+  GROUP BY customer_id
+),
+
+customer_type_base AS (
+  SELECT 
+    r.*,
+    fp.first_purchase_date,
+    CASE 
+      WHEN r.invoice_date < fp.first_purchase_date THEN 'Pre_first_purchase_cancel'
+      WHEN r.invoice_date = fp.first_purchase_date THEN 'New'
+      WHEN r.invoice_date > fp.first_purchase_date THEN 'Returning'
+      ELSE 'Other'
+    END AS customer_type
+  FROM online_retail r
+  JOIN first_purchase fp
+    ON r.customer_id = fp.customer_id
+  WHERE r.customer_id IS NOT NULL
+),
+
+constant_thresholds AS (
   SELECT 51 AS p90_threshold, 0.0404 AS avg_cancel_rate
 ),
 
@@ -244,8 +278,19 @@ customer_rfm_labels AS (
   FROM (
     SELECT 
       customer_id,
-      NTILE(5) OVER (ORDER BY DATEDIFF((SELECT MAX(invoice_date) FROM online_retail), MAX(invoice_date)) DESC) AS r_score,
-      NTILE(5) OVER (ORDER BY COUNT(DISTINCT CASE WHEN quantity > 0 AND unit_price > 0 THEN invoice_no END) ASC) AS f_score
+      NTILE(5) OVER (
+        ORDER BY DATEDIFF(
+          (SELECT MAX(invoice_date) FROM online_retail),
+          MAX(invoice_date)
+        ) DESC
+      ) AS r_score,
+
+      NTILE(5) OVER (
+        ORDER BY COUNT(DISTINCT CASE 
+          WHEN quantity > 0 AND unit_price > 0 THEN invoice_no 
+        END) ASC
+      ) AS f_score
+
     FROM online_retail 
     WHERE customer_id IS NOT NULL 
     GROUP BY customer_id
@@ -262,20 +307,46 @@ sku_risk_analysis AS (
   SELECT 
     r.stock_code,
     arc.rfm_segment,
-    COUNT(DISTINCT CASE WHEN r.quantity > 0 AND r.unit_price > 0 THEN r.invoice_no END) AS at_risk_gross_orders,
-    COUNT(DISTINCT CASE WHEN r.quantity < 0 AND r.invoice_no LIKE 'C%' THEN r.invoice_no END) AS at_risk_canceled_orders,
-    1.0 * COUNT(DISTINCT CASE WHEN r.quantity < 0 AND r.invoice_no LIKE 'C%' THEN r.invoice_no END)
-      / NULLIF(COUNT(DISTINCT CASE WHEN r.quantity > 0 AND r.unit_price > 0 THEN r.invoice_no END), 0) AS at_risk_cancel_rate,
+    r.customer_type,
+
+    COUNT(DISTINCT CASE 
+      WHEN r.quantity > 0 AND r.unit_price > 0 THEN r.invoice_no 
+    END) AS at_risk_gross_orders,
+
+    COUNT(DISTINCT CASE 
+      WHEN r.quantity < 0 AND r.invoice_no LIKE 'C%' THEN r.invoice_no 
+    END) AS at_risk_canceled_orders,
+
+    1.0 * COUNT(DISTINCT CASE 
+      WHEN r.quantity < 0 AND r.invoice_no LIKE 'C%' THEN r.invoice_no 
+    END)
+    / NULLIF(COUNT(DISTINCT CASE 
+      WHEN r.quantity > 0 AND r.unit_price > 0 THEN r.invoice_no 
+    END), 0) AS at_risk_cancel_rate,
+
     SUM(ABS(r.quantity * r.unit_price)) AS at_risk_canceled_revenue,
+
     AVG(r.unit_price) AS avg_sku_price
-  FROM online_retail r
-  INNER JOIN at_risk_customers arc ON r.customer_id = arc.customer_id
-  WHERE r.stock_code NOT IN ('Test001', 'Test002', 'S', 'PADS', 'Post', 'M', 'Gift_0001_90', 'Gift_0001_80', 'Gift_0001_70', 'Gift_0001_60', 'Gift_0001_50', 'Gift_0001_40', 'Gift_0001_30', 'Gift_0001_20', 'Gift_0001_10', 'Gift', 'DOT', 'D', 'CRUK', 'C2', 'C3', 'BANK CHARGES', 'B', 'AMAZONFEE', 'ADJUST2', 'ADJUST')
-  GROUP BY r.stock_code, arc.rfm_segment
+
+  FROM customer_type_base r
+  INNER JOIN at_risk_customers arc 
+    ON r.customer_id = arc.customer_id
+
+  WHERE r.customer_type = 'Returning'
+    AND r.stock_code NOT IN (
+      'Test001','Test002','S','PADS','Post','M',
+      'Gift_0001_90','Gift_0001_80','Gift_0001_70','Gift_0001_60',
+      'Gift_0001_50','Gift_0001_40','Gift_0001_30','Gift_0001_20',
+      'Gift_0001_10','Gift','DOT','D','CRUK','C2','C3',
+      'BANK CHARGES','B','AMAZONFEE','ADJUST2','ADJUST'
+    )
+
+  GROUP BY r.stock_code, arc.rfm_segment, r.customer_type
 )
 
 SELECT 
   s.rfm_segment AS rfm_segment,
+  s.customer_type AS customer_type,
   CASE
     WHEN s.avg_sku_price < 1 THEN '<1'
     WHEN s.avg_sku_price < 5 THEN '1-4.99'
@@ -285,11 +356,13 @@ SELECT
     WHEN s.avg_sku_price < 100 THEN '50-99.99'
     ELSE '100+'
   END AS price_band,
+
   s.stock_code,
   s.at_risk_gross_orders,
   s.at_risk_canceled_orders,
   ROUND(s.at_risk_cancel_rate * 100, 2) AS cancel_rate_pct,
   s.at_risk_canceled_revenue
+
 FROM sku_risk_analysis s
 CROSS JOIN constant_thresholds ct
 WHERE s.at_risk_gross_orders > ct.p90_threshold 

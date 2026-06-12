@@ -2,7 +2,7 @@
 
 ## Business Goal
 - Reduce return/cancellation rate
-- Increase net revenue (gross revenue − return/cancellation impact)
+- Increase net revenue
 
 ## Source Dataset
 **[Online Retail II](https://archive.ics.uci.edu/dataset/502/online%2Bretail%2Bii?utm_source=chatgpt.com)**--This dataset originating from UCI Machine Learning Respository includes online retail transactions from 2009-2011.
@@ -15,18 +15,18 @@
 - **High-impact driver**--Top 10 Countries and SKUs by canceled revenue.
 
 ## Data Quality & Assumption
-- When processing the Online Retail dataset, I observed that it is not a conventional dynamic state table, but instead adopts journal-style offsetting records. If independent order numbers are directly counted as the denominator, the calculated cancellation rate will be unreasonably diluted due to the repeated inclusion of cancelled orders (C-orders). Therefore, I strictly restricted the denominator to only positive sales orders, which restored the true business cancellation rate.
-- For time-series KPI trends (orders, cancel rate, canceled revenue share), we keep all transactions including missing CustomerID to avoid selection bias.
+- When processing the Online Retail dataset, I observed that it is not a conventional dynamic state table, but instead adopts journal-style offsetting records. If independent order numbers are directly counted as the denominator, the calculated cancellation rate will be unreasonably diluted due to the repeated inclusion of cancelled orders (C-orders). Therefore, I strictly restricted the denominator to only positive sales orders, which restored the true business cancellation rate and share.
+- For time-series KPI trends (revenue, cancel rate, canceled revenue share), we keep all transactions including missing CustomerID to avoid selection bias.
 - For customer-level segmentation (RFM, repeat-cancel patterns), we restrict to records with non-null CustomerID.
 - **Limitation** Here, "cancellation/return" is used to approximately represent "post-sale return pressure", which is not equivalent to the entire process of actual returns, but is sufficient for identifying driving factors and optimization opportunities.
 
 ## KPI Overview
-- Cancel Rate:15.46%
-- Canceled revenue share:7.29%
-- Top countries by canceled revenue(DESC):
-United Kingdom,EIRE,France,Germany,Australia,Japan,Nigeria,Cyprus,Denmark,Channel Island
-- Top SKUs by canceled revenue(DESC):
-M,21314,BANK CHARGES,72045D,20971,85174,21112,21843,37503,22138
+- Cancel Rate:18.74%
+- Canceled revenue share:3.65%
+- Top 10 countries by canceled revenue(DESC):
+United Kingdom,EIRE,France,Spain,Germany,Denmark,Netherlands,Japan,Channel Island,USA
+- Top 10 SKUs by canceled revenue(DESC):
+23843,23166,22423,85123A,21108,71477,79323W,23113,48185,84078A
 
 ## Deep Dive
 - **Scale & Trend**:The trend of overall cancel rate and net revenue are down from 2009 to 2011.

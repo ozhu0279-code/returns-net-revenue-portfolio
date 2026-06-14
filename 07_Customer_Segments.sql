@@ -310,26 +310,50 @@ sku_risk_analysis AS (
     r.customer_type,
 
     COUNT(DISTINCT CASE 
-      WHEN r.quantity > 0 AND r.unit_price > 0 THEN r.invoice_no 
+      WHEN r.quantity > 0
+       AND r.unit_price > 0
+      THEN r.invoice_no
     END) AS at_risk_gross_orders,
 
     COUNT(DISTINCT CASE 
-      WHEN r.quantity < 0 AND r.invoice_no LIKE 'C%' THEN r.invoice_no 
+      WHEN r.quantity < 0
+       AND r.invoice_no LIKE 'C%'
+      THEN r.invoice_no
     END) AS at_risk_canceled_orders,
 
     1.0 * COUNT(DISTINCT CASE 
-      WHEN r.quantity < 0 AND r.invoice_no LIKE 'C%' THEN r.invoice_no 
+      WHEN r.quantity < 0
+       AND r.invoice_no LIKE 'C%'
+      THEN r.invoice_no
     END)
-    / NULLIF(COUNT(DISTINCT CASE 
-      WHEN r.quantity > 0 AND r.unit_price > 0 THEN r.invoice_no 
-    END), 0) AS at_risk_cancel_rate,
+    / NULLIF(
+        COUNT(DISTINCT CASE 
+          WHEN r.quantity > 0
+           AND r.unit_price > 0
+          THEN r.invoice_no
+        END),
+        0
+      ) AS at_risk_cancel_rate,
 
-    SUM(ABS(r.quantity * r.unit_price)) AS at_risk_canceled_revenue,
+    SUM(
+      CASE
+        WHEN r.quantity < 0
+         AND r.invoice_no LIKE 'C%'
+        THEN ABS(r.quantity * r.unit_price)
+        ELSE 0
+      END
+    ) AS at_risk_canceled_revenue,
 
-    AVG(r.unit_price) AS avg_sku_price
+    AVG(
+      CASE
+        WHEN r.quantity > 0
+         AND r.unit_price > 0
+        THEN r.unit_price
+      END
+    ) AS avg_sku_price
 
   FROM customer_type_base r
-  INNER JOIN at_risk_customers arc 
+  INNER JOIN at_risk_customers arc
     ON r.customer_id = arc.customer_id
 
   WHERE r.customer_type = 'Returning'

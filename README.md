@@ -17,7 +17,7 @@
 ## Data Quality & Assumption
 - When processing the Online Retail dataset, I observed that it is not a conventional dynamic state table, but instead adopts journal-style offsetting records. If independent order numbers are directly counted as the denominator, the calculated cancellation rate will be unreasonably diluted due to the repeated inclusion of cancelled orders (C-orders). Therefore, I strictly restricted the denominator to only positive sales orders, which restored the true business cancellation rate and share.
 - For time-series KPI trends (revenue, cancel rate, canceled revenue share), we keep all transactions including missing CustomerID to avoid selection bias.
-- For customer-level segmentation (RFM, repeat-cancel patterns), we restrict to records with non-null CustomerID.
+- For customer-level segmentation (RFM), we restrict to records with non-null CustomerID.
 - **Limitation** Here, "cancellation/return" is used to approximately represent "post-sale return pressure", which is not equivalent to the entire process of actual returns, but is sufficient for identifying driving factors and optimization opportunities.
 
 ## KPI Overview
@@ -29,11 +29,8 @@ United Kingdom,EIRE,France,Spain,Germany,Denmark,Netherlands,Japan,Channel Islan
 23843,23166,22423,85123A,21108,71477,79323W,23113,48185,84078A
 
 ## Deep Dive
-- **Scale & Trend**:The trend of overall cancel rate and net revenue are down from 2009 to 2011.
-For net revenue,it increased more to the peaks which are £1.42M and £1.46M from Aug to Nov，then declined rapidly from Dec in 2010 and 2011.It stablized at the level of £0.6M from Jan to Jul in 2009 and 2010. So it is peak season for selling from Aug to Nov while slack season was from Jan to Jul.
-For cancel rate,it came to the lowest point-12.14% in Jan 2010,then stabelized ranging from 14% to 17% for the rest of months.
-Regarding the comparison between cancel rate and net revenue,we changed net revenue into canceled revenue share to make these 2 variables compatible.From this comparison table,we can see that overall,the cancel rate and the cancelled revenue share show a clear positive correlation, indicating that order cancellations are a significant driver of revenue loss. However,in some months the two metrics deviate,suggesting that the impact of cancellations on revenue is not solely determined by the number of cancelled orders but is also closely related to the amount structure of the cancelled orders.
-When the cancel rate decreases while cancelled revenue share increases, it usually implies that the proportion of high-value orders being cancelled has risen.Conversely, when the cancellation rate increases but the share of cancelled revenue decreases, it indicates that the newly cancelled orders are more likely to be low-value ones, having a relatively smaller marginal impact on revenue. Therefore, when assessing the cancellation issue, it is not sufficient to focus only on the cancellation rate; it is also necessary to consider the order amount structure, SKU price range, and customer type to accurately determine its true impact on revenue.
+- **Scale & Trend**In this section,i splited into 2 parts-all products(revenue trend) and product-only(revenue and qulity trend).For revenue trend,the 2 charts all show that net revenue ranged from £0.5M to £0.8M in the first and second quater.Until August,it was over £0.8M,and rised to around £1.4M in November and plunged to around £0.6M in December.
+For quality trend,canceled revenue share is lower than cancel rate for 
 - **Country × Month**:The main country which contributed to the most canceled revenue is Unite Kingdom because it ranks the first place and leads the second country almost by 20K every month.
 - **SKU × Month**:The main SKUs which take up the most canceled revenue are M and AMAZONFEE.Nov 2010 is the watershed because M is the contributor to the most canceled revenue before it,and AMAZONFEE and M are 2 major contributors after that time.
 - **SKU / Price band**：We made a sku scatter diagram to clearly find the popularity of skus combined cancel rate and order volume,and it was divded into 5 quadrants which are fix now,monitor,star,investigate and other.In this diagram,the high-riks skus is located at fix now quadrant and counted up to 18 that followed by21232,21314,21527,21539,21843,22064,22138,22198,22423,22456,22467,22617,22776,22960,71477,82483,84949,85066.

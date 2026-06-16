@@ -51,7 +51,7 @@ United Kingdom,EIRE,France,Spain,Germany,Denmark,Netherlands,Japan,Channel Islan
 - Fourth quadrant-star,high average canceled revenue and low cancel share
 - As at risk segment has more cancellations,so i combined these tables-SKU scatter,price band,comprison of new and returning customers and RFM table into a new chart to analyze which products lead to high cancel share with different price bands.
 I marked the bar that canceled revenue is over average canceled revenue of at risk-£215.51 as orange and the bar that cancel rate is over 15% as red.So in the diagram,we can see that there are 9 products taking up more canceled revenue,which are 22328,22138,21323,79323W,37449,21527,22423,21843,85066.
-From the observation of sku scatter,there are 5 products containing high cancel rate and high canceled revenue,which are 22138,21527,22423,21843,85066.
+- From the observation of sku scatter,there are 5 products containing high cancel rate and high canceled revenue,which are 22138,21527,22423,21843,85066.
 
 ## Diagnose the Likely Root Cause
 - 

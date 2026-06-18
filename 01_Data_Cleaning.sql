@@ -198,6 +198,14 @@ WHERE stock_code IN (
 );
 -- Result: 5,820 rows
 
+-- Conclusion of Time Dimensions VIEW from initial EDA
+SELECT 
+  DATE_FORMAT(invoice_date, '%Y-%m') AS invoice_month
+FROM online_retail
+WHERE invoice_date >= '2010-01-01'
+GROUP BY invoice_month
+ORDER BY invoice_month;
+-- Result: 24 rows
 
 
 

@@ -93,6 +93,7 @@ WITH base AS (
       ELSE 'Product'
     END AS product_type
   FROM online_retail
+  WHERE invoice_date >= '2010-01-01'
 ),
 monthly_metrics AS (
   SELECT
@@ -101,7 +102,7 @@ monthly_metrics AS (
              THEN line_amount ELSE 0 END) AS gross_revenue,
     SUM(CASE WHEN quantity < 0 AND invoice_no LIKE 'C%' AND product_type = 'Product' 
              THEN ABS(line_amount) ELSE 0 END) AS canceled_revenue,
-    COUNT(DISTINCT CASE WHEN product_type = 'Product' THEN invoice_no END) AS total_orders,
+    COUNT(DISTINCT CASE WHEN quantity > 0 AND unit_price > 0 AND product_type = 'Product' THEN invoice_no END) AS total_orders,
     COUNT(DISTINCT CASE WHEN quantity < 0 AND invoice_no LIKE 'C%' AND product_type = 'Product' 
                         THEN invoice_no END) AS canceled_orders
   FROM base

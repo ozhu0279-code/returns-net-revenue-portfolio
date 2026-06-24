@@ -1,4 +1,4 @@
---Gross/Canceled/Net Revenue per month(including non-product data)
+--Gross/Canceled/Net Revenue per month(All)
 WITH base AS (
   SELECT
     invoice_no,
@@ -31,7 +31,7 @@ SELECT
 FROM revenue_calculation
 ORDER BY month;
 
---Gross/Canceled/Net Revenue per month(only product data)
+--Gross/Canceled/Net Revenue per month(Product Only)
 WITH base AS (
   SELECT
     invoice_no,
@@ -74,7 +74,7 @@ SELECT
 FROM revenue_calculation
 ORDER BY month;
 
---Cancel Rate/Canceled Revenue Share per Month(only product data)
+--Cancel Rate/Canceled Revenue Share per Month(Product Only)
 WITH base AS (
   SELECT
     invoice_no,

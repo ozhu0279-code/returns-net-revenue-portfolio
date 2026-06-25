@@ -16,7 +16,9 @@ WITH base AS (
       ELSE 'Product' 
     END AS product_type
   FROM online_retail
-  WHERE invoice_no LIKE 'C%' AND quantity < 0
+  WHERE invoice_no LIKE 'C%' 
+  AND quantity < 0
+  AND invoice_date >= '2010-01-01'
 ),
 sku_rank AS (
   SELECT 

@@ -7,6 +7,7 @@ WITH base AS (
     unit_price,
     quantity * unit_price AS line_amount
   FROM online_retail
+  WHERE invoice_date >= '2010-01-01'
 ),
 revenue_calculation AS (
   SELECT
@@ -50,6 +51,7 @@ WITH base AS (
       ELSE 'Product'
     END AS product_type
   FROM online_retail
+  WHERE invoice_date >= '2010-01-01'
 ),
 revenue_calculation AS (
 SELECT

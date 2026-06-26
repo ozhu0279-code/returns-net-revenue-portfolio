@@ -66,6 +66,7 @@ WITH base AS (
       ELSE 'Product'
     END AS product_type
   FROM online_retail
+  WHERE invoice_date >= '2010-01-01'
 ),
 orders_summary AS (
   SELECT 

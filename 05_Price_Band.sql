@@ -25,6 +25,7 @@ WITH base AS (
       ELSE 'Product'
     END AS product_type
   FROM online_retail
+  WHERE invoice_date >= '2010-01-01'
 ),
   
 metrics_step AS (

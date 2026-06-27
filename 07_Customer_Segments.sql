@@ -69,6 +69,7 @@ WITH first_purchase AS (
   WHERE customer_id IS NOT NULL
     AND quantity > 0
     AND unit_price > 0
+    AND invoice_date >= '2010-01-01'
     AND stock_code NOT IN (
       'Test001','Test002','S','PADS','Post','M',
       'Gift_0001_90','Gift_0001_80','Gift_0001_70','Gift_0001_60',

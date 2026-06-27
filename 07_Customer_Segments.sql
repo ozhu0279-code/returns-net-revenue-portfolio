@@ -15,6 +15,7 @@ WITH first_purchase_bucket AS (
       'CRUK','C2','C3','BANK CHARGES','B','AMAZONFEE',
       'ADJUST2','ADJUST'
     )
+    AND invoice_date >= '2010-01-01'
   GROUP BY customer_id
 ),
 

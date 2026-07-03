@@ -16,7 +16,7 @@
 
 ## Data Quality & Assumption
 - When processing the Online Retail dataset, I observed that it is not a conventional dynamic state table, but instead adopts journal-style offsetting records. If independent order numbers are directly counted as the denominator, the calculated cancellation rate will be unreasonably diluted due to the repeated inclusion of cancelled orders (C-orders). Therefore, I strictly restricted the denominator to only positive sales orders, which restored the true business cancellation rate and share.
-- During the exploratory data analysis (EDA) phase, i found that the original dataset spans from 2009-12 to 2011-12. Aggregating the data directly would result in "December" appearing three times in the sample, while other months appear only twice. Given that our company operates in the gift wholesale industry, Q4—particularly December—exhibits strong seasonal price fluctuations and purchasing patterns. 
+- During the exploratory data analysis (EDA) phase, i found that the original dataset spans from 2009-12 to 2011-12. Aggregating the data directly would result in "December" appearing three times in the sample, while other months appear only twice. Given that our company operates in the gift wholesale industry, Q4—particularly December—exhibits strong seasonal price fluctuations and purchasing patterns. Therefore,
 To eliminate "left-truncation bias" (preventing customers from 2009–12 being incorrectly classified as new) and "seasonal weighting bias" (avoiding distortions in annual price band and SKU contribution distributions caused by Christmas purchasing preferences), this report standardizes all dashboard data to a common baseline period of January 1, 2010, to December 31, 2011 (a full 24-month cycle).
 - For time-series KPI trends (revenue, cancel rate, canceled revenue share), we keep all transactions including missing CustomerID to avoid selection bias.
 - For customer-level segmentation (RFM), we restrict to records with non-null CustomerID.
@@ -32,7 +32,7 @@ United Kingdom,EIRE,France,Spain,Germany,Denmark,Netherlands,Japan,Channel Islan
 
 ## Deep Dive
 - **Scale & Trend**In this section,i splited into 2 categories--all products(revenue trend) and product-only(revenue and qulity trend).
-- For revenue trend,the 2 charts all show that net revenue ranged from £0.5M to £0.8M in the first and second quater.Until August,it was over £0.8M,and rised to peak around £1.4M in November and plunged to around £0.6M in December.
+- For revenue trend,the 2 charts all show that net revenue ranged from £0.5M to £0.8M in the first and second quater.Until August,it began to increase and rised to peak around £1.4M in November and plunged to around £0.6M in December.
 - For quality trend,canceled revenue share was lower than cancel rate for the first 24 months,but it was higher than cancel rate by 10% in the last month,Dec 2011.
 - **Country × Month**:The main country which contributed to the most canceled revenue is Unite Kingdom leading the second country almost by £10K every month.
 - **SKU × Month**:The main SKU which take up the most canceled revenue is 23843,around £168.47K in Dec 2011.That's why canceled revenue share is more than cancel rate in Dec 2011. 
@@ -56,7 +56,15 @@ I marked the bar that canceled revenue is over average canceled revenue of at ri
 - From the observation of sku scatter,there are 5 products containing high cancel rate and high canceled revenue,which are 22138,21527,22423,21843,85066.
 
 ## Diagnose the Likely Root Cause
-- 
+- 1️⃣Reveue Trend
+- 1).The reason for revenue keeping rising from  August to October: inventory buildup period for the year-end shopping season (Q4) and logistics lead time.
+- Inventory buildup:Retailers usually need to purchase the gifts needed for the end of the year 2-3 months in advance. Starting from August, wholesalers will place large orders to have the goods delivered to various physical stores or warehouse centers in September and October.
+- Logistics lead time:As it is a British company, considering the shipping time, customs clearance time, and warehouse turnover time, the wholesaler must complete the inventory entry before the peak season. Otherwise, missing the Christmas period would be a fatal disaster. Therefore, the growth in August-October is actually the result of "order lead time". 
+- 2).The reason for the peak period on November:Black Friday and restock.
+- Black Friday: This is not only a shopping spree for retailers, but also a "last push" for wholesalers. At this time, many retailers will find that certain best-selling items are not selling well, and will carry out a "final large stock replenishment".
+- Seasonal impulse spending: November not only includes Black Friday but also encompasses the initial shopping before Christmas, with gift demand peaking at this time.
+
+
 - As United Kingdom is the base of online retail,and the local team can seamlessly align with cultural backgrounds and consumer habits, offering faster pre-sales communication and after-sales service,local customers are more likely to choose this online store. Therefore, the order volume will be higher, which leads to an increase in the number of cancellations.
 
 

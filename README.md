@@ -13,10 +13,13 @@
 - **Canceled Revenue Share**--canceled_revenue / gross_revenue`
 - **Net Revenue**--gross revenue minus canceled revenue.
 - **High-impact driver**--Top 10 Countries and SKUs by canceled revenue.
+- **AOV**--Average of Value
+- **UPO**--Units per Order
+- **ASP**--Average Selling Price
 
 ## Data Quality & Assumption
 - When processing the Online Retail dataset, I observed that it is not a conventional dynamic state table, but instead adopts journal-style offsetting records. If independent order numbers are directly counted as the denominator, the calculated cancellation rate will be unreasonably diluted due to the repeated inclusion of cancelled orders (C-orders). Therefore, I strictly restricted the denominator to only positive sales orders, which restored the true business cancellation rate and share.
-- During the exploratory data analysis (EDA) phase, i found that the original dataset spans from 2009-12 to 2011-12. Aggregating the data directly would result in "December" appearing three times in the sample, while other months appear only twice. Given that our company operates in the gift wholesale industry, Q4—particularly December—exhibits strong seasonal price fluctuations and purchasing patterns. Therefore,
+- During the exploratory data analysis (EDA) phase, i found that the original dataset spans from 2009-12 to 2011-12. Aggregating the data directly would result in "December" appearing three times in the sample, while other months appear only twice. Given that our company operates in the gift wholesale industry, Q4—particularly December—exhibits strong seasonal price fluctuations and purchasing patterns. Therefore,in terms of the time dimension,we excluded the data from December 2009 to ensure data harmonization.
 To eliminate "left-truncation bias" (preventing customers from 2009–12 being incorrectly classified as new) and "seasonal weighting bias" (avoiding distortions in annual price band and SKU contribution distributions caused by Christmas purchasing preferences), this report standardizes all dashboard data to a common baseline period of January 1, 2010, to December 31, 2011 (a full 24-month cycle).
 - For time-series KPI trends (revenue, cancel rate, canceled revenue share), we keep all transactions including missing CustomerID to avoid selection bias.
 - For customer-level segmentation (RFM), we restrict to records with non-null CustomerID.
@@ -30,9 +33,12 @@ United Kingdom,EIRE,France,Spain,Germany,Denmark,Netherlands,Japan,Channel Islan
 - Top 10 SKUs by canceled revenue(DESC):
 23843,23166,22423,85123A,21108,71477,79323W,23113,48185,84078A
 
+
 ## Deep Dive
-- **Scale & Trend**In this section,i splited into 2 categories--all products(revenue trend) and product-only(revenue and qulity trend).
-- For revenue trend,the 2 charts all show that net revenue ranged from £0.5M to £0.8M in the first and second quater.Until August,it began to increase and rised to peak around £1.4M in November and plunged to around £0.6M in December.
+- **Scale & Trend**In this section,i splited into 2 categories--all products(revenue trend) and product-only(revenue and qulity trend,AOV trend,top5 order amount per month and contributor).
+- For revenue trend,the 2 charts all show that net revenue ranged from £0.5M to £0.8M in the first and second quater.Until August,it began to increase and rised to peak,around £1.4M in November and plunged to around £0.6M in December.
+- From data to business analysis (breakdown of revenue trend from August to December):I used the metric-AOV (Average Order Value) to show purchasing power,top 5 order amount per month to find outlier that affected average value of whole month and contributor that assessed which factor cause the change AOV,including AOV change rate,UPO change rate and ASP change rate.From AOV trend,AOV in August to October was significantly lower than in December, and by the 2011 fiscal year, AOV in December surged dramatically to £700 which is the peak of trend.To better explain this phenomenon,i made the table of top 5 orders according to order amount every month.In 2010,the order amount of the 5th order for December is higher than that in the months of August to October's:the one for December had exceeded £10,000, while its for August to October were less than £10,000.That indicated that the purchasing power in the last part of December is stronger than that in the months of August to October.In 2011，the order amount of the first order for December is higher than that in the months of August to October's:the one for December had exceeded £100,000, while its for August to October were just over £10,000.That indicated that the purchasing power in the first part of December is stronger than that in the months of August to October.To further elaborate this table,i calculated the contribution rates of each factor,like AOV change rate,UPO change rate and ASP change rate.
+- To sum up,i thought that this business model from August to December should be **retail survival bias**,
 - For quality trend,canceled revenue share was lower than cancel rate for the first 24 months,but it was higher than cancel rate by 10% in the last month,Dec 2011.
 - **Country × Month**:The main country which contributed to the most canceled revenue is Unite Kingdom leading the second country almost by £10K every month.
 - **SKU × Month**:The main SKU which take up the most canceled revenue is 23843,around £168.47K in Dec 2011.That's why canceled revenue share is more than cancel rate in Dec 2011. 

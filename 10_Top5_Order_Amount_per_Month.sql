@@ -28,7 +28,7 @@ order_level_summary AS (
 
 ranked_orders AS (
     SELECT 
-        invoice_month,
+        invoice_month AS month,
         invoice_no,
         customer_id,
         unique_skus,
@@ -41,4 +41,4 @@ ranked_orders AS (
 SELECT * 
 FROM ranked_orders
 WHERE order_rank <= 5 
-ORDER BY invoice_month ASC, order_rank ASC;
+ORDER BY month ASC, order_rank ASC;

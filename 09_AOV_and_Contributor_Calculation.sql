@@ -42,7 +42,7 @@ metrics_lag AS (
     FROM monthly_indicators
 )
 SELECT 
-    invoice_month,
+    invoice_month AS month,
     total_orders,
     aov,
     upo,

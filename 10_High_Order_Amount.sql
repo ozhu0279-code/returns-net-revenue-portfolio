@@ -1,3 +1,4 @@
+-- Top 5 orders by order amount per month
 WITH filtered_retail AS (
     SELECT 
         DATE_FORMAT(STR_TO_DATE(invoice_date, '%Y/%m/%d %H:%i'), '%Y-%m') AS invoice_month,

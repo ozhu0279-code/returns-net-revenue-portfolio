@@ -1,3 +1,4 @@
+-- Price Band
 WITH base AS (
   SELECT
     invoice_no,
@@ -135,8 +136,3 @@ SELECT
   1.0 * canceled_revenue / NULLIF(gross_revenue, 0) AS canceled_revenue_share
 FROM orders_summary
 ORDER BY stock_code, cleaned_price_band;
-
-
-
-
-  

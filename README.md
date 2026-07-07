@@ -35,13 +35,17 @@ United Kingdom,EIRE,France,Spain,Germany,Denmark,Netherlands,Japan,Channel Islan
 
 
 ## Deep Dive
-- **Scale & Trend**In this section,i splited into 2 categories--all products(revenue trend) and product-only(revenue and quality trend,AOV,UPO and ASP trend,top 5 orders per month by order amount).
+- **Scale & Trend**In this section,i splited into 2 categories--all products(revenue trend) and product-only(revenue and quality trend,AOV,UPO and ASP trend,top 5 order amounts per month).
 - For revenue trend,the 2 charts all show that net revenue ranged from £0.5M to £0.8M in the first and second quater.Until August,it began to increase and rised to peak,around £1.4M in November and plunged to around £0.6M in December.
-- From data to business analysis (breakdown of revenue trend from August to December):I used the metric-AOV,UPO and ASP to show purchasing power,top 5 order amount per month to find outlier that affected average value of whole month.In 2010,from August to December,AOV and ASP kept rising while UPO kept declining.From top 5 orders table,the order amount of the 5th order for December is higher than that in the months of August to October's.In 2011,AOV,ASP and UPO,all of them maintained the upward trend.Even AOV and UPO increased sharply in December.From top 5 orders table,there was a big order in December,which is over £100,000.To sum up,i thought that this business model from August to December should be **retail survival bias**:after shopping spree in November,most small-scale individual customers were unwilling to purchase more by December;instead, the market was dominated by high-value orders or large-scale corporate contracts.
-- For quality trend,canceled revenue share was lower than cancel rate for the first 24 months,but it was higher than cancel rate by 10% in the last month,Dec 2011.
+- From data to business analysis (breakdown of revenue trend from August to December):I used the metric-AOV,UPO and ASP to show purchasing power,top 5 order amounts to find outlier that affected average value of whole month.
+- In 2010,from August to December,AOV and ASP kept rising while UPO kept downward trend.From top 5 orders table,the order amount of the 5th order for December is higher than that in the months of August to October's.
+- In 2011,AOV,ASP and UPO,all of them maintained the upward trend.Even AOV and UPO increased sharply in December.From top 5 orders table,there was a big order in December,which is over £100,000.
+- To sum up,i thought that this business model from August to December is that after shopping spree in November,most small-scale individual customers were unwilling to purchase more by December,which led to seasonal retail contraction;instead,the market was dominated by high-value orders or large-scale corporate contracts at year-end,survivorship bias was triggered,causing average order value to surge against the trend.
+- For quality trend,canceled revenue share was lower than cancel rate for the first 23 months,but it was higher than cancel rate by 10% in the last month,Dec. 2011.
+- From data to business analysis (breakdown that canceled revenu share was higher than cancel rate in Dec. 2011):based on the monthly top 5 order amounts as previously recorded, there was a large order of over 100,000 pounds in Dec. 2011. It is speculated that this might be due to the cancellation of this order.However,it turns out that this order had actually been cancelled upon checking the raw dateset.(invoice no.C581484）
 - **Country × Month**:The main country which contributed to the most canceled revenue is Unite Kingdom leading the second country almost by £10K every month.
 - **SKU × Month**:The main SKU which take up the most canceled revenue is 23843,around £168.47K in Dec 2011.That's why canceled revenue share is more than cancel rate in Dec 2011. 
-- **SKU / Price band**：We made a sku scatter diagram to clearly find the of skus combined cancel rate and order volume,and it was divded into 4 quadrants which are fix now,investigate,star and stable.In this diagram,the high-risk skus are located at first quadrant-fix now and counted up to 38 products,which is over 90 percentile in order volum--541 and average cancel rate--4.04%.
+- **SKU / Price band**：We made a sku scatter diagram to clearly find the of skus combined cancel rate and order volume,and it was divded into 4 quadrants which are fix now,investigate,star and stable.In this diagram,the high-risk skus are located at first quadrant-fix now and counted up to 38 products,which is over 90 percentile of order volum--538 and 75 percentile of cancel rate--2.16%.
 - First quadrant-fix now,high order volume and high cancel share.This quadrant indicates that the more orders customers place,the more orders are cancelled.We cannot make revenue and lose revenue at the same,so i tagged this quadrant as high risk to fix these products as soon as possible.
 - Second quadrant-investigate,low order volume and high cancel rate
 - Third quadrant-stable,low order volume and low cancel rate
@@ -61,16 +65,20 @@ I marked the bar that canceled revenue is over average canceled revenue of at ri
 - From the observation of sku scatter,there are 5 products containing high cancel rate and high canceled revenue,which are 22138,21527,22423,21843,85066.
 
 ## Diagnose the Likely Root Cause
-- 1️⃣Reveue Trend
+- 1️⃣Revenue Trend
 - 1).The reason for revenue keeping rising from  August to October: inventory buildup period for the year-end shopping season (Q4) and logistics lead time.
 - Inventory buildup:Retailers usually need to purchase the gifts needed for the end of the year 2-3 months in advance. Starting from August, wholesalers will place large orders to have the goods delivered to various physical stores or warehouse centers in September and October.
 - Logistics lead time:As it is a British company, considering the shipping time, customs clearance time, and warehouse turnover time, the wholesaler must complete the inventory entry before the peak season. Otherwise, missing the Christmas period would be a fatal disaster. Therefore, the growth in August-October is actually the result of "order lead time". 
 - 2).The reason for the peak period on November:Black Friday and restock.
 - Black Friday: This is not only a shopping spree for retailers, but also a "last push" for wholesalers. At this time, many retailers will find that certain best-selling items are not selling well, and will carry out a "final large stock replenishment".
 - Seasonal impulse spending: November not only includes Black Friday but also encompasses the initial shopping before Christmas, with gift demand peaking at this time.
-
-
+- 3).The reason for sharp drop in December:shifts in sales models.
+- End of B2B procurement cycle: For wholesale operations, the deadline for Christmas orders is typically just before Christmas—early December. Once the first half of December passes, most stores have already stocked up on all their holiday inventory. They no longer need to purchase additional gifts, as there's not enough time to sell them before Christmas.
+- Retail vs. wholesale timing gap: While retailers are busy selling products to consumers in December,company—as a supplier—has already completed its wholesale deliveries by then.
+- Seasonal slowdown: From mid- to late December, global commerce enters the Christmas holiday period, causing B2B activities to come to a near halt, directly resulting in a steep decline in December revenue.
+- 2️⃣Top Driver(country)
 - As United Kingdom is the base of online retail,and the local team can seamlessly align with cultural backgrounds and consumer habits, offering faster pre-sales communication and after-sales service,local customers are more likely to choose this online store. Therefore, the order volume will be higher, which leads to an increase in the number of cancellations.
+- 
 
 
 

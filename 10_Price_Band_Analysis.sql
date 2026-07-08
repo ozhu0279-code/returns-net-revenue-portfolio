@@ -47,15 +47,15 @@ metrics_step AS (
   FROM base
   WHERE product_type = 'Product' 
    AND price_band = '1-4.99'
-  GROUP BY stock_code , cleaned_price_band      
+  GROUP BY stock_code , price_band      
 )
 
 SELECT
   price_band,
   stock_code,
   total_orders,
-  band_gross_revenue AS gross_revenue,
-  band_canceled_revenue AS canceled_revenue,
+  band_gross_revenue,
+  band_canceled_revenue,
    1.0 * band_canceled_revenue / NULLIF(band_gross_revenue, 0) AS canceled_revenue_share
 FROM metrics_step m
 WHERE 1.0 * band_canceled_revenue / NULLIF(band_gross_revenue, 0) <= '1'

@@ -59,4 +59,4 @@ SELECT
 FROM metrics_step m
 WHERE 1.0 * band_canceled_revenue / NULLIF(band_gross_revenue, 0) <= '1'
 GROUP BY price_band , stock_code
-ORDER BY total_orders DESC
+ORDER BY total_orders DESC;

@@ -1,5 +1,5 @@
 -- This is to analyze the trend of high canceled revenue product which is over £3,000 according to sku scatter plot.
-  WITH base AS (
+WITH base AS (
   SELECT
     invoice_no,
     stock_code,

@@ -97,6 +97,7 @@ SELECT
     global_gross_orders,
     global_canceled_orders,
     ROUND(100.0 * global_canceled_orders / NULLIF(global_gross_orders, 0), 2) AS global_cancel_rate_pct,
+    global_canceled_revenue,
     at_risk_gross_orders,
     at_risk_canceled_orders,
     ROUND(100.0 * at_risk_canceled_orders / NULLIF(at_risk_gross_orders, 0), 2) AS at_risk_cancel_rate_pct,

@@ -67,7 +67,8 @@ aggregated_data AS (
         r.stock_code,
         COUNT(DISTINCT CASE WHEN r.quantity > 0 AND r.unit_price > 0 THEN r.invoice_no END) AS global_gross_orders,
         COUNT(DISTINCT CASE WHEN r.quantity < 0 AND r.invoice_no LIKE 'C%' THEN r.invoice_no END) AS global_canceled_orders,
-        
+        SUM(CASE WHEN  r.quantity < 0 AND r.invoice_no LIKE 'C%' THEN ABS(r.quantity * r.unit_price) ELSE 0 END) AS global_canceled_revenue,
+    
         COUNT(DISTINCT CASE 
             WHEN rfm.rfm_segment = 'At Risk' AND r.customer_type = 'Returning' AND r.quantity > 0 AND r.unit_price > 0 
             THEN r.invoice_no 

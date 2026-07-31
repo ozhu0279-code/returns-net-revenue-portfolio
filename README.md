@@ -82,6 +82,8 @@ END //
 - Quadrant 3 (Lost): Low revenue impact.
 - Quadrant 4 (Champions): High revenue, low cancellation rate.
 
+---
+
 ## Root Cause Diagnosis
 
 ### 1. Macro Revenue & Seasonality Shift
@@ -102,6 +104,8 @@ END //
 - **SKU 22138 (Multi-Channel Sync Friction & Lead-Lag Exhaustion)**: Maintains an unhealthy baseline cancellation rate year-round, with a September 2010 global spike (34.21%) triggering a catastrophic 100% cancellation rate for At Risk VIP buyers in October 2010. Root cause: ERP-WMS inventory desynchronization and unmonitored safety stock depletion.
 
 - **SKU 22617 (Phantom Stock Discrepancy)**: Recurrent 100% cancellation spikes among VIP returning customers in Aug 2010, Feb 2011, and March 2011. Root cause: "Phantom inventory" lingering in the frontend e-commerce system due to API synchronization latency with physical warehouse bins.
+
+---
 
 ## 🛠️ High-Risk SKUs Supply Chain Action Plan (Standard Operating Procedures)
 

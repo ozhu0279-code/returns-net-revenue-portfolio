@@ -1,6 +1,11 @@
 # Reducing Returns to Improve Net Revenue: Returns/Cancellations Diagnostics & Action Plan (E-commerce)
 
 ## Business Goal
+
+## 📊 Interactive Tableau Dashboard
+Click the preview image below to view and interact with the live dashboard on Tableau Public:
+
+[![Tableau Dashboard Preview](https://public.tableau.com/views/E-commerceReturnsNetRevenuePortfolioDiagnostics/ExecutiveOverview?:language=en-US&:sid=&:redirect=auth&:display_count=n&:origin=viz_share_link)
 - Reduce return/cancellation rates across SKU and customer tiers
 - Protect gross profit margins and increase net revenue
 - Establish Standard Operating Procedures (SOPs) to mitigate supply chain bottlenecks for key high-risk SKUs

@@ -6,6 +6,7 @@
 Click the preview image below to view and interact with the live dashboard on Tableau Public:
 
 [Tableau Dashboard Preview](https://public.tableau.com/views/E-commerceReturnsNetRevenuePortfolioDiagnostics/ExecutiveOverview?:language=en-US&:sid=&:redirect=auth&:display_count=n&:origin=viz_share_link)
+![image](https://github.com/ozhu0279-code/returns-net-revenue-portfolio/blob/main/Dashboard_Preview.gif)
 
 - Reduce return/cancellation rates across SKU and customer tiers
 - Protect gross profit margins and increase net revenue
